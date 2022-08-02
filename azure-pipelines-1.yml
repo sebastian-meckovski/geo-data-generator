@@ -1,0 +1,18 @@
+trigger:
+- main
+- feature/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+  
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: '14.x'
+- task: CmdLine@2
+  inputs:
+    script: |
+      cd src/Studio
+      npm install -g @sanity/cli
+      npm install
+      sanity deploy
