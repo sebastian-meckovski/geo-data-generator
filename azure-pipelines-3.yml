@@ -1,28 +1,22 @@
-# Node.js with React
-# Build a Node.js project that uses React.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
-
 trigger:
 - main
+- feature/*
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
 variables:
-  SANITY_AUTH_TOKEN: $(SanityAuthToken)
+ SANITY_AUTH_TOKEN: $(SanityDeployAPIToken)
 
 steps:
 - task: NodeTool@0
   inputs:
     versionSpec: '14.x'
-  displayName: 'Install Node.js'
-
-- script: |
-      sanity install
-      sanity logout
-      sanity login
+- task: CmdLine@2
+  inputs:
+    script: |
+      cd src
       npm install -g @sanity/cli
-      npm install -g @sanity/core 
+      sanity login
       npm install
       sanity deploy
