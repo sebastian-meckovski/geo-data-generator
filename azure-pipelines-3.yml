@@ -20,6 +20,8 @@ steps:
 
 - script: |
       sanity install
+      sanity logout
+      sanity login
       npm install -g @sanity/cli
       npm install -g @sanity/core 
       npm install
