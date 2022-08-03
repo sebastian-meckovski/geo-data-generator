@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "description": "",
-  "main": "package.json",
+  "main": "sanity.json",
   "author": "Sebastian Meckovski <sebastian.meckovski@gmail.com>",
   "license": "UNLICENSED",
   "scripts": {
