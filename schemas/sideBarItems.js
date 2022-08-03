@@ -7,12 +7,12 @@ export default {
   icon: BellIcon,
   fields: [
     {
-      title: 'Item Name',
+      title: 'Item Name test',
       name: 'ItemName',
       type: 'string',
     },
     {
-      title: 'Description',
+      title: 'Description test',
       name: 'Description',
       type: 'string',
     }
