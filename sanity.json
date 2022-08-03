@@ -6,7 +6,8 @@
   },
   "api": {
     "projectId": "mefzw5qp",
-    "dataset": "seb-test-dataset"
+    "dataset": "seb-test-dataset",
+    "basePath": "/studio"
   },
   "plugins": [
     "@sanity/base",
