@@ -10,7 +10,7 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  SANITY_AUTH_TOKEN: $(Sanite Auth Token)
+  SANITY_AUTH_TOKEN: $(SanityAuthToken)
 
 steps:
 - task: NodeTool@0
@@ -19,6 +19,7 @@ steps:
   displayName: 'Install Node.js'
 
 - script: |
+      sanity install
       npm install -g @sanity/cli
       npm install -g @sanity/core 
       npm install
