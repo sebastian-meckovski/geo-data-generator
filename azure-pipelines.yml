@@ -5,6 +5,9 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
+variables:
+ SANITY_AUTH_TOKEN: $(SanityDeployAPIToken)
+
 steps:
 - task: NodeTool@0
   inputs:
