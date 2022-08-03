@@ -9,17 +9,17 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
+variables:
+  SANITY_AUTH_TOKEN: $(Sanite Auth Token)
+
 steps:
 - task: NodeTool@0
   inputs:
-    versionSpec: '10.x'
+    versionSpec: '14.x'
   displayName: 'Install Node.js'
 
 - script: |
       npm install -g @sanity/cli
       npm install -g @sanity/core 
-      npm build
       npm install
-      sanity login
       sanity deploy
-  displayName: 'npm install and build'
