@@ -1,7 +1,8 @@
 {
   "root": true,
   "project": {
-    "name": "moccasin-eland"
+    "name": "moccasin-eland",
+    "basePath": "/studio"
   },
   "api": {
     "projectId": "mefzw5qp",
