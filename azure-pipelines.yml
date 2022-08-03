@@ -16,7 +16,6 @@ steps:
 - task: CmdLine@2
   inputs:
     script: |
-      cd src/Studio
       npm install -g @sanity/cli
       npm install
       sanity deploy
