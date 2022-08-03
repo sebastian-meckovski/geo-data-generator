@@ -1,13 +1,12 @@
 {
   "root": true,
   "project": {
-    "name": "moccasin-eland1",
+    "name": "moccasin-eland",
     "basePath": "/studio"
   },
   "api": {
     "projectId": "mefzw5qp",
-    "dataset": "seb-test-dataset",
-    "basePath": "/studio"
+    "dataset": "seb-test-dataset"
   },
   "plugins": [
     "@sanity/base",
