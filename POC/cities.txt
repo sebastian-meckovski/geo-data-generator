@@ -1,0 +1,7 @@
+1001 London 2401
+1002 London 2402
+1003 Edinburgh 2403
+1004 Edinburg 2404
+1005 Regensburg 2405
+1006 Penzberg 2405
+1007 Zirndorf 2405
