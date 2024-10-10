@@ -33,4 +33,4 @@ pd.set_option('display.expand_frame_repr', False)  # Prevent column wrapping
 pd.set_option('display.max_rows', None)  # Show all rows
 
 # Display the first 100 records with the mapped admin1 names
-print(df[['geonameid', 'name', 'admin1_code', 'admin1_name']].head(39999))
+print(df[['geonameid', 'name', 'admin1_code', 'admin1_name', 'feature_class', 'feature_code']].head(9999))
