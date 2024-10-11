@@ -34,6 +34,15 @@ def filter_specific_feature_codes(input_file, output_file):
     # Drop any records that don't contain country code
     filtered_df = filtered_df[filtered_df['country_code'].notnull() & (filtered_df['country_code'] != '')]
 
+    # Get the DataFrame for countries (feature_code == 'PCLI')
+    pcli_df = df[df['feature_code'] == 'PCLI']
+
+    # Create a dictionary to map country codes to their geonameid
+    country_geonameid_map = pcli_df.set_index('country_code')['geonameid'].to_dict()
+
+    # Add the country_geonameid column to the filtered DataFrame as integer
+    filtered_df['country_geonameid'] = filtered_df['country_code'].map(country_geonameid_map).astype('Int64')
+
     # Save the filtered DataFrame to a new file
     filtered_df.to_csv(output_file, sep='\t', index=False)
 

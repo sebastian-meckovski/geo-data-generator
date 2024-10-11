@@ -22,4 +22,4 @@
 3401 en United Kingdom
 3401 fr Royaume-Uni
 3402 en United States
-3402 en
+3402 fr États Unis
