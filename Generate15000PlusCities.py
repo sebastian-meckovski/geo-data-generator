@@ -20,22 +20,26 @@ def filter_specific_feature_codes(input_file, output_file):
 
     # List of feature codes to filter
     feature_codes = [
-        'PPLA', 'PPLC', 'PPL', 'PPLX', 'PPLW', 'PPLA2', 'PPLA3', 'PPLQ',
-        'PPLA4', 'PPLG', 'PPLL', 'PPLA5', 'PPLS', 'PPLF', 'PPLR', 'PPLH', 'STLMT'
+        'PPLA', 'PPLC', 'PPL', 'PPLW',
+        'PPLG', 'PPLL', 'PPLS', 'PPLF', 'PPLR',
     ]
 
     # Read the data into a pandas DataFrame
     df = pd.read_csv(input_file, sep='\t', header=None, names=column_names, dtype=dtype, low_memory=False,
-    keep_default_na = False, na_values = '')
+                     keep_default_na=False, na_values='')
 
     # Filter the DataFrame for rows with the specified feature codes and population > 15000
     filtered_df = df[df['feature_code'].isin(feature_codes) & (df['population'] >= 15000)]
+
+    # Drop any records that don't contain country code
+    filtered_df = filtered_df[filtered_df['country_code'].notnull() & (filtered_df['country_code'] != '')]
 
     # Save the filtered DataFrame to a new file
     filtered_df.to_csv(output_file, sep='\t', index=False)
 
     print(f"Filtered records have been saved to {output_file}")
 
+# Path to the allCountries.txt file
 input_file = 'allCountries.txt'
 output_file = 'filtered_records15000.txt'
 filter_specific_feature_codes(input_file, output_file)
