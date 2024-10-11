@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 def filter_pcli_records(input_file, output_file):
     # Define column names based on the provided data structure
     column_names = [
@@ -19,18 +18,19 @@ def filter_pcli_records(input_file, output_file):
         'dem': 'int64', 'timezone': 'str', 'modification_date': 'str'
     }
 
-    # Read the data into a pandas DataFrame
-    df = pd.read_csv(input_file, sep='\t', header=None, names=column_names, dtype=dtype, low_memory=False)
+    # Read the data into a pandas DataFrame, ensuring 'NA' is not treated as a missing value
+    df = pd.read_csv(input_file, sep='\t', header=None, names=column_names, dtype=dtype, low_memory=False,
+                     keep_default_na=False, na_values='')
 
-    # Filter the DataFrame for rows where feature_class is 'PCLI'
+    # Filter the DataFrame for rows where feature_code is 'PCLI'
     pcli_df = df[df['feature_code'] == 'PCLI']
 
-    # Save the filtered DataFrame to a new file
-    pcli_df.to_csv(output_file, sep='\t', index=False)
+    # Save the filtered DataFrame to a new file without headers
+    pcli_df.to_csv(output_file, sep='\t', index=False, header=False)
 
     print(f"Filtered records have been saved to {output_file}")
 
-
+# Path to the allCountries.txt file
 input_file = 'allCountries.txt'
 output_file = 'pcli_records.txt'
 filter_pcli_records(input_file, output_file)

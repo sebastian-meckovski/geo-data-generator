@@ -25,7 +25,8 @@ def filter_specific_feature_codes(input_file, output_file):
     ]
 
     # Read the data into a pandas DataFrame
-    df = pd.read_csv(input_file, sep='\t', header=None, names=column_names, dtype=dtype, low_memory=False)
+    df = pd.read_csv(input_file, sep='\t', header=None, names=column_names, dtype=dtype, low_memory=False,
+    keep_default_na = False, na_values = '')
 
     # Filter the DataFrame for rows with the specified feature codes and population > 15000
     filtered_df = df[df['feature_code'].isin(feature_codes) & (df['population'] >= 15000)]
