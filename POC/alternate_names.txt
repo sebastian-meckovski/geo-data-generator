@@ -1,27 +1,30 @@
-1001 en London
-1001 fr Londres
-1002 en London
-1002 fr London
-1003 en Edinburgh
-1003 fr Édimbourg
-1004 en Edinburg
-1005 en Regensburg
-1005 fr Ratisbonne
-1006 en Penzberg
-1007 en Zirndorf
-2401 en England
-2401 fr Angleterre
-2402 en Ontario
-2402 fr Ontario
-2403 en Scotland
-2403 fr Ecosse
-2404 en Texas
-2404 fr Texas
-2405 en Hesse
-2405 fr Hesse
-3401 en United Kingdom
-3401 fr Royaume-Uni
-3402 en United States
-3402 fr États Unis
-3403 en Germany
-3403 fr Allemagne
+1001	en	London
+1001	fr	Londres
+1002	en	London
+1002	fr	London
+1003	en	Edinburgh
+1003	fr	Édimbourg
+1004	en	Edinburg
+1005	en	Regensburg
+1005	fr	Ratisbonne
+1006	en	Penzberg
+1007	en	Zirndorf
+2401	en	England
+2401	fr	Angleterre
+2402	en	Ontario
+2402	fr	Ontario
+2403	en	Scotland
+2403	fr	Ecosse
+2404	en	Texas
+2404	fr	Texas
+2405	en	Hesse
+2405	fr	Hesse
+2406	en	Nebraska
+2407	en	California
+2407	fr	Californie
+3401	en	United Kingdom
+3401	fr	Royaume-Uni
+3402	en	United States
+3402	fr	États Unis
+3403	en	Germany
+3403	fr	Allemagne

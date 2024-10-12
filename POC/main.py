@@ -1,49 +1,76 @@
 import pandas as pd
 
-# Load the data from text files
-cities = pd.read_csv('cities.txt', sep=' ', header=None, names=['cityId', 'city', 'regionId'])
-regions = pd.read_csv('admin1_codes.txt', sep=' ', header=None, names=['regionId', 'region'])
-alt_names = pd.read_csv('alternate_names.txt', sep=' ', header=None, names=['id', 'lang', 'name'])
+# Read data from text files with specified dtypes
+admin1_df = pd.read_csv('admin1_codes.txt', sep=' ', header=None, names=['admin_code', 'admin_name'],
+                        dtype={'admin_code': int, 'admin_name': str})
+alternate_names_df = pd.read_csv('alternate_names.txt', sep='\t', header=None, names=['geoname_id', 'lang', 'name'],
+                                 dtype={'geoname_id': int, 'lang': str, 'name': str})
+cities_df = pd.read_csv('cities.txt', sep=' ', header=None,
+                        names=['city_geoname_id', 'city_name', 'admin_code', 'country_code'],
+                        dtype={'city_geoname_id': int, 'city_name': str, 'admin_code': int, 'country_code': int})
 
-# Merge cities with regions to get the region names
-cities = cities.merge(regions, on='regionId', how='left')
+# Create a DataFrame for country codes (replace with your actual data if you have a country_codes.txt file)
+country_codes_df = pd.DataFrame({
+    "country_code": [3401, 3402, 3403],
+    "country_name": ["United Kingdom", "United States", "Germany"]
+})
 
-# Separate city and region alternate names
-city_alt_names = alt_names[alt_names['id'].isin(cities['cityId'])]
-region_alt_names = alt_names[alt_names['id'].isin(cities['regionId'])]
 
-# Set the language filter (change this to 'fr' for French)
-language_filter = 'en'
+def join_and_localize(language_code):
+    """
+    Joins the three DataFrames and localizes the city, admin area,
+    and country names based on the given language code using merge operations.
+    """
 
-# Create the final dataframe
-final_data = []
+    # Merge cities_df with alternate_names_df on city_geoname_id
+    merged_df = pd.merge(cities_df, alternate_names_df[alternate_names_df['lang'] == language_code],
+                         left_on='city_geoname_id', right_on='geoname_id', how='left')
 
-for _, row in cities.iterrows():
-    cityId = row['cityId']
+    # Fill missing city names with original values
+    merged_df['city_name'] = merged_df['name'].fillna(merged_df['city_name'])
 
-    # Get alternate names for the city
-    city_alts = city_alt_names[(city_alt_names['id'] == cityId) & (city_alt_names['lang'] == language_filter)]
-    if city_alts.empty:
-        city_alts = pd.DataFrame([{'id': cityId, 'lang': language_filter, 'name': row['city']}])
+    # Merge with admin1_df and fill missing admin names
+    merged_df = pd.merge(merged_df, admin1_df, on='admin_code', how='left')
+    merged_df = pd.merge(merged_df, alternate_names_df[alternate_names_df['lang'] == language_code],
+                         left_on='admin_code', right_on='geoname_id', how='left')
+    merged_df['admin_name'] = merged_df['name_y'].fillna(merged_df['admin_name'])
 
-    # Get alternate names for the region
-    region_alts = region_alt_names[
-        (region_alt_names['id'] == row['regionId']) & (region_alt_names['lang'] == language_filter)]
-    if region_alts.empty:
-        region_alts = pd.DataFrame([{'id': row['regionId'], 'lang': language_filter, 'name': row['region']}])
+    # Merge with country_codes_df and fill missing country names
+    merged_df = pd.merge(merged_df, country_codes_df, on='country_code', how='left')
+    merged_df = pd.merge(merged_df, alternate_names_df[alternate_names_df['lang'] == language_code],
+                         left_on='country_code', right_on='geoname_id', how='left')
+    merged_df['country_name'] = merged_df['name'].fillna(merged_df['country_name'])
 
-    for _, city_alt in city_alts.iterrows():
-        for _, region_alt in region_alts.iterrows():
-            final_data.append({
-                'id': cityId,
-                'city': city_alt['name'],
-                'region': region_alt['name']
-            })
+    # Select and rename columns
+    result_df = merged_df[['city_geoname_id', 'city_name', 'admin_name', 'country_name']]
+    result_df = result_df.rename(columns={'admin_name': 'admin_area', 'country_name': 'country'})
 
-# Convert the final data to a DataFrame
-final_df = pd.DataFrame(final_data)
+    return result_df
 
-# Save the final DataFrame to a CSV file
-final_df.to_csv('final_data.csv', index=False)
+def remove_admin_area_if_unique(df):
+    """
+    Removes the admin_area column if the city name is unique within a country.
+    Keeps the admin_area if there are multiple cities with the same name in the country.
+    """
+    df['city_count'] = df.groupby(['country', 'city_name'])['city_name'].transform('count')
+    df['admin_area'] = df.apply(lambda row: row['admin_area'] if row['city_count'] > 1 else '', axis=1)
+    df = df.drop(columns=['city_count'])
+    return df
 
-print(final_df)
+
+# Get the data in English
+en_data = join_and_localize("en")
+en_data = remove_admin_area_if_unique(en_data)
+print("Data in English:")
+print(en_data.to_markdown(index=False, numalign="left", stralign="left"))
+
+# Get the data in French
+fr_data = join_and_localize("fr")
+fr_data = remove_admin_area_if_unique(fr_data)
+
+print("\nData in French:")
+print(fr_data.to_markdown(index=False, numalign="left", stralign="left"))
+
+# Save the results to text files
+en_data.to_csv('joined_data_en.txt', sep='\t', index=False, header=True)
+fr_data.to_csv('joined_data_fr.txt', sep='\t', index=False, header=True)

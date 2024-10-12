@@ -1,8 +1,9 @@
 id,city,region
-1001,London,England
-1002,London,Ontario
-1003,Edinburgh,Scotland
-1004,Edinburg,Texas
-1005,Regensburg,Hesse
-1006,Penzberg,Hesse
-1007,Zirndorf,Hesse
+London,2401,United Kingdom
+London,2402,United States
+Edinburgh,2403,United Kingdom
+Edinburg,2404,United States
+Regensburg,2405,Germany
+Penzberg,2405,Germany
+Zirndorf,2405,Germany
+Lincoln,2406,United Kingdom
