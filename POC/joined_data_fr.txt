@@ -1,0 +1,11 @@
+geonameId	city_name	admin_area	country
+3401	Londres		Royaume-Uni
+3402	London		États Unis
+3401	Édimbourg		Royaume-Uni
+3402	Edinburg		États Unis
+3403	Ratisbonne		Allemagne
+3403	Penzberg		Allemagne
+3403	Zirndorf		Allemagne
+3402	Lincoln	Nebraska	États Unis
+3402	Lincoln	Californie	États Unis
+3401	Lincoln		Royaume-Uni
