@@ -1,7 +1,0 @@
-2401 England
-2402 Ontario
-2403 Scotland
-2404 Texas
-2405 Hesse
-2406 Nebraska
-2407 California
