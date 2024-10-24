@@ -1,10 +1,11 @@
+import io
 import pandas as pd
 import numpy as np
 import requests
 import geohash
 import zipfile
 from math import radians, cos, sin, asin, sqrt
-import io
+from import_to_mongo import import_dataframe_to_mongo
 
 # Define output languages
 languages = ['pl', 'lt', 'ru', 'hu', 'en', 'fr']
@@ -255,5 +256,7 @@ for language in languages:
     ].index  # Get the indices
 
     # Remove the 'alternate_name_admin1' values at those indices in the ORIGINAL
-    cities_with_country_admin1_alternates[['geoname_id_city', 'latitude', 'longitude', 'geohash', 'country_code', 'population', 'estimated_radius', 'alternate_name_city', 'alternate_name_admin1', 'alternate_name_country']].to_csv(f'cities_with_alternates_{language}.csv', index=False, sep=',', header=True) 
+    # cities_with_country_admin1_alternates[['geoname_id_city', 'latitude', 'longitude', 'geohash', 'country_code', 'population', 'estimated_radius', 'alternate_name_city', 'alternate_name_admin1', 'alternate_name_country']].to_csv(f'cities_with_alternates_{language}.csv', index=False, sep=',', header=True)
+
+    import_dataframe_to_mongo(cities_with_country_admin1_alternates[['geoname_id_city', 'latitude', 'longitude', 'geohash', 'country_code', 'population', 'estimated_radius', 'alternate_name_city', 'alternate_name_admin1', 'alternate_name_country']], language_code=language)
 
