@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 import geopandas as gpd
@@ -5,7 +6,10 @@ from helpers import add_geohash, calculate_radius, check_names_city_admin1, chec
 from import_to_mongo import import_dataframe_to_mongo
 
 # Define output languages
-languages = ['pl', 'lt', 'ru', 'hu', 'en', 'fr']
+languages = os.environ.get('LANGUAGES').split(',')
+mongo_cluster_name = os.environ.get('MONGO_CLUSTER_NAME')
+mongo_username = os.environ.get('MONGO_DB_USERNAME')
+mongo_password = os.environ.get('MONGO_DB_PASS')
 
 # Define the file paths (these will be the extracted file names)
 global_cities_path = 'allCountries.txt'
@@ -176,5 +180,11 @@ for language in languages:
         cities_with_country_admin1_alternates.apply(check_names_city_admin1, axis=1)
     ].index 
 
-    import_dataframe_to_mongo(cities_with_country_admin1_alternates[['geoname_id_city', 'latitude', 'longitude', 'geohash', 'country_code', 'population', 'estimated_radius', 'alternate_name_city', 'alternate_name_admin1', 'alternate_name_country']], language_code=language)
+    import_dataframe_to_mongo(
+        cities_with_country_admin1_alternates[['geoname_id_city', 'latitude', 'longitude', 'geohash', 'country_code', 'population', 'estimated_radius', 'alternate_name_city', 'alternate_name_admin1', 'alternate_name_country']],
+        language,
+        mongo_cluster_name,
+        mongo_username,
+        mongo_password
+    )
 
