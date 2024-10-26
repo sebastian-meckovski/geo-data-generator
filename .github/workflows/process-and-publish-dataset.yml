@@ -1,4 +1,4 @@
-name: Run Python Script
+name: Process and publish dataset to Mongo
 
 on:
   # Allows you to run this workflow manually from the Actions tab
