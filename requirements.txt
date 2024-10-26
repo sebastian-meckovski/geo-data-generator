@@ -4,3 +4,4 @@ requests
 geohash
 python-geohash
 pymongo
+geopandas
