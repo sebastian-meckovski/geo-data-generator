@@ -7,7 +7,7 @@ on:
 env:
   AZURE_FUNCTIONAPP_NAME: 'geo-name-reverse-lookup'   # set this to your function app name on Azure
   AZURE_FUNCTIONAPP_PACKAGE_PATH: './AzureFunctionDeployment'       # set this to the path to your function app project, defaults to the repository root
-  NODE_VERSION: '20.0.x'                   # set this to the dotnet version to use (e.g. '2.1.x', '3.1.x', '5.0.x')
+  NODE_VERSION: '20.0.x'                   # set this to the Node.js version to use
 
 jobs:
   build-and-deploy:
@@ -29,6 +29,15 @@ jobs:
         npm run build --if-present
         npm run test --if-present
         popd
+
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Update secret in Azure Key Vault
+      run: |
+        az keyvault secret set --vault-name ${{ vars.AZURE_KEY_VAULT_NAME }} --name ${{ vars.AZURE_KEY_VAULT_SECRET_NAME }} --value ${{ secrets.AZURE_KEY_VAULT_SECRET_VALUE }}
 
     - name: 'Run Azure Functions Action'
       uses: Azure/functions-action@v1
