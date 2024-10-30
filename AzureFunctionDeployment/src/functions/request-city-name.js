@@ -7,6 +7,6 @@ app.http('request-city-name', {
         context.log(`Http function processed request for url "${request.url}"`);
         const name = request.query.get('name') || await request.text() || 'world';
 
-        return { body: `Hello, ${name}! DEPLOYED GEO DATA GENERATOR REPO` };
+        return { body: `Hello, ${name}! DEPLOYED GEO DATA GENERATOR REPO. TESTING KEY DEPLOY` };
     }
 });
