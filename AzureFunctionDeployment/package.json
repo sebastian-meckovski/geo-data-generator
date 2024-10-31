@@ -8,10 +8,10 @@
   },
   "dependencies": {
     "@azure/functions": "^4.0.0",
-    "@azure/keyvault-secrets": "^4.4.0",
-    "@azure/identity": "^2.0.0",
-    "mongodb": "^4.10.0" 
+    "@azure/identity": "^2.1.0",
+    "@azure/keyvault-secrets": "^4.9.0",
+    "mongodb": "^4.17.2",
+    "ngeohash": "^0.6.3"
   },
-  "devDependencies": {},
   "main": "src/{index.js,functions/*.js}"
 }
