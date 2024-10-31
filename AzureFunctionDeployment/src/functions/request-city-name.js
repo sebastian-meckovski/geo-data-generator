@@ -22,7 +22,7 @@ app.http('request-city-name', {
         const latitude = parseFloat(request.query.get('latitude'));
 
         if (!language || isNaN(longitude) || isNaN(latitude)) {
-            return { body: 'Missing or invalid parameters', status: 400 };
+            return { body: 'Missing or invalid parameters', status: 400, headers: { 'Content-Type': 'application/json' } };
         }
 
         try {
@@ -44,10 +44,10 @@ app.http('request-city-name', {
             const query = { geohash: { $regex: `^${geohash}` } };
             const results = await collection.find(query).toArray();
 
-            return { body: JSON.stringify(results) };
+            return { body: JSON.stringify(results), headers: { 'Content-Type': 'application/json' } };
         } catch (error) {
             context.log.error('Error processing request', error);
-            return { body: 'Error processing request' };
+            return { body: JSON.stringify({ error: 'Error processing request' }), headers: { 'Content-Type': 'application/json' } };
         }
     }
 });
