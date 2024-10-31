@@ -39,12 +39,12 @@ app.http('request-city-name', {
 
             const geohash = ngeohash.encode(latitude, longitude).substring(0, 4);
             const databaseName = `cities_${language}`;
-            const database = mongoClient.db(databaseName);
-            const collection = database.collection('cities_collection');
+            const database = mongoClient.db('city_names_db');
+            const collection = database.collection(databaseName);
             const query = { geohash: { $regex: `^${geohash}` } };
             const results = await collection.find(query).toArray();
 
-            return { body: results };
+            return { body: JSON.stringify(results) };
         } catch (error) {
             context.log.error('Error processing request', error);
             return { body: 'Error processing request' };
