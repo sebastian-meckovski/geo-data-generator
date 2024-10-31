@@ -2,7 +2,7 @@ const { app } = require('@azure/functions');
 const { DefaultAzureCredential } = require('@azure/identity');
 const { SecretClient } = require('@azure/keyvault-secrets');
 
-const keyVaultName = "MongoDB-credentials";
+const keyVaultName = process.env.AZURE_KEY_VAULT_SECRET_NAME;
 const keyVaultUrl = `https://${keyVaultName}.vault.azure.net`;
 const credential = new DefaultAzureCredential();
 const client = new SecretClient(keyVaultUrl, credential);
