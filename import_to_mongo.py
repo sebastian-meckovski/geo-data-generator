@@ -1,11 +1,8 @@
 import pandas as pd
 from pymongo import MongoClient
 
-def import_dataframe_to_mongo(df, language_code, cluster_name, username, password):
+def import_dataframe_to_mongo(df, language_code, connection_string):
 
-    # MongoDB connection string
-    connection_string = f"mongodb+srv://{username}:{password}@{cluster_name}.crjcc.mongodb.net/test?retryWrites=true&w=majority"
-    
     # Connect to MongoDB
     client = MongoClient(connection_string)
     
