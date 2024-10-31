@@ -8,8 +8,6 @@ const credential = new DefaultAzureCredential();
 const client = new SecretClient(keyVaultUrl, credential);
 
 let cachedSecret = null;
-let lastFetchTime = null;
-const cacheDuration = 60 * 60 * 1000 * 24; // 24 hour
 
 app.http('request-city-name', {
     methods: ['GET'],
@@ -19,8 +17,7 @@ app.http('request-city-name', {
         const name = request.query.get('name') || await request.text() || 'world';
 
         try {
-            const currentTime = new Date().getTime();
-            if (!cachedSecret || (currentTime - lastFetchTime) > cacheDuration) {
+            if (!cachedSecret) {
                 const secretName = "geo-names-mongo-connection-string";
                 const secret = await client.getSecret(secretName);
                 cachedSecret = secret.value;
