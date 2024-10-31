@@ -25,7 +25,6 @@ jobs:
       - name: Run script
         env:
           LANGUAGES: ${{ vars.LANGUAGES }}
-          MONGO_CLUSTER_NAME: ${{ secrets.MONGO_CLUSTER_NAME }}
-          MONGO_DB_USERNAME: ${{ secrets.MONGO_DB_USERNAME }}
-          MONGO_DB_PASS: ${{ secrets.MONGO_DB_PASS }}
+          MONGO_DATABASE_NAME: ${{ secrets.MONGO_DATABASE_NAME }}
+          MONGO_DB_CONN_STRING: ${{ secrets.MONGO_DB_CONN_STRING }}
         run: python countries_data.py
