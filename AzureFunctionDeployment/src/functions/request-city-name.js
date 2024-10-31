@@ -39,7 +39,7 @@ app.http('request-city-name', {
 
             const geohash = ngeohash.encode(latitude, longitude).substring(0, 4);
             const databaseName = `cities_${language}`;
-            const database = mongoClient.db('city_names_db');
+            const database = mongoClient.db('city-names-db');
             const collection = database.collection(databaseName);
             const query = { geohash: { $regex: `^${geohash}` } };
             const results = await collection.find(query).toArray();

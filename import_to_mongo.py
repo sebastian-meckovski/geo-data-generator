@@ -8,7 +8,7 @@ def import_dataframe_to_mongo(df, language_code, connection_string, database):
     
     # Specify the database and collection
     db = client[database]
-    collection = db[f"cities_{language_code}"]
+    collection = db[f"cities-{language_code}"]
     
     # Drop the collection if it exists
     collection.drop()
