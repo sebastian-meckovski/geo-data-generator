@@ -7,6 +7,10 @@ const keyVaultUrl = `https://${keyVaultName}.vault.azure.net`;
 const credential = new DefaultAzureCredential();
 const client = new SecretClient(keyVaultUrl, credential);
 
+let cachedSecret = null;
+let lastFetchTime = null;
+const cacheDuration = 60 * 60 * 1000 * 24; // 24 hour
+
 app.http('request-city-name', {
     methods: ['GET'],
     authLevel: 'anonymous',
@@ -15,11 +19,15 @@ app.http('request-city-name', {
         const name = request.query.get('name') || await request.text() || 'world';
 
         try {
-            const secretName = "geo-names-mongo-connection-string";
-            const secret = await client.getSecret(secretName);
-            const connectionString = secret.value;
+            const currentTime = new Date().getTime();
+            if (!cachedSecret || (currentTime - lastFetchTime) > cacheDuration) {
+                const secretName = "geo-names-mongo-connection-string";
+                const secret = await client.getSecret(secretName);
+                cachedSecret = secret.value;
+                lastFetchTime = currentTime;
+            }
 
-            return { body: `Retrieved connection string: ${connectionString}` };
+            return { body: `Retrieved connection string: ${cachedSecret}` };
         } catch (error) {
             context.log.error('Error retrieving secret from Key Vault', error);
             return { body: 'Error retrieving secret from Key Vault' };
