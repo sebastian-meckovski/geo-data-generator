@@ -7,9 +7,7 @@ from import_to_mongo import import_dataframe_to_mongo
 
 # Define output languages
 languages = os.environ.get('LANGUAGES').split(',')
-mongo_cluster_name = os.environ.get('MONGO_CLUSTER_NAME')
-mongo_username = os.environ.get('MONGO_DB_USERNAME')
-mongo_password = os.environ.get('MONGO_DB_PASS')
+mongo_conn_string = os.environ.get('MONGO_DB_CONN_STRING')
 
 # Define the file paths (these will be the extracted file names)
 global_cities_path = 'allCountries.txt'
@@ -183,8 +181,6 @@ for language in languages:
     import_dataframe_to_mongo(
         cities_with_country_admin1_alternates[['geoname_id_city', 'latitude', 'longitude', 'geohash', 'country_code', 'population', 'estimated_radius', 'alternate_name_city', 'alternate_name_admin1', 'alternate_name_country']],
         language,
-        mongo_cluster_name,
-        mongo_username,
-        mongo_password
+        mongo_conn_string
     )
 

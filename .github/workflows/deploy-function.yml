@@ -37,7 +37,7 @@ jobs:
 
     - name: Update secret in Azure Key Vault
       run: |
-        az keyvault secret set --vault-name ${{ vars.AZURE_KEY_VAULT_NAME }} --name ${{ vars.AZURE_KEY_VAULT_SECRET_NAME }} --value ${{ secrets.AZURE_KEY_VAULT_SECRET_VALUE }}
+        az keyvault secret set --vault-name ${{ vars.AZURE_KEY_VAULT_NAME }} --name ${{ vars.AZURE_KEY_VAULT_SECRET_NAME }} --value ${{ secrets.MONGO_DB_CONN_STRING }}
 
     - name: 'Run Azure Functions Action'
       uses: Azure/functions-action@v1
