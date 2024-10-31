@@ -12,7 +12,7 @@ const client = new SecretClient(keyVaultUrl, credential);
 let cachedSecret = null;
 let mongoClient = null;
 
-app.http('request-city-name', {
+app.http('city-name', {
     methods: ['GET'],
     authLevel: 'anonymous',
     handler: async (request, context) => {
