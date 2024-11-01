@@ -90,9 +90,9 @@ app.http('city-name', {
                     result = {
                         geonameId: nearestCity.geoname_id_city,
                         countryCode: nearestCity.country_code,
-                        cityName: nearestCity.name[language].city,
-                        adminSubDivisionName: nearestCity.name[language].admin1,
-                        countryName: nearestCity.name[language].country
+                        name: {
+                            [language]: nearestCity.name[language]
+                        }
                     };
                 } else {
                     return { body: JSON.stringify({ error: `No data found for language: ${language}` }), status: 404, headers: { 'Content-Type': 'application/json' } };
