@@ -61,10 +61,18 @@ app.http('city-name', {
             const results = await collection.find(query).toArray();
 
             // Filter results to only include coordinates within the circles
-            const filteredResults = results.filter(city => {
+            let filteredResults = results.filter(city => {
                 const distance = haversine(latitude, longitude, city.latitude, city.longitude);
                 return distance <= (city.estimated_radius / 1000); // Convert radius to kilometers
             });
+
+            // If no results found, check within a 2 km radius
+            if (filteredResults.length === 0) {
+                filteredResults = results.filter(city => {
+                    const distance = haversine(latitude, longitude, city.latitude, city.longitude);
+                    return distance <= 2; // 2 km radius
+                });
+            }
 
             if (filteredResults.length === 0) {
                 return { body: JSON.stringify({ error: 'No cities found within the specified radius' }), status: 404, headers: { 'Content-Type': 'application/json' } };
@@ -76,7 +84,15 @@ app.http('city-name', {
                 return distance < nearest.distance ? { city, distance } : nearest;
             }, { city: null, distance: Infinity }).city;
 
-            return { body: JSON.stringify(nearestCity), headers: { 'Content-Type': 'application/json' } };
+            // Return only the specified fields
+            const result = {
+                countryCode: nearestCity.country_code,
+                cityName: nearestCity.alternate_name_city,
+                adminSubDivisionName: nearestCity.alternate_name_admin1,
+                countryName: nearestCity.alternate_name_country
+            };
+
+            return { body: JSON.stringify(result), headers: { 'Content-Type': 'application/json' } };
         } catch (error) {
             context.log.error('Error processing request', error);
             return { body: JSON.stringify({ error: 'Error processing request' }), status: 500, headers: { 'Content-Type': 'application/json' } };
