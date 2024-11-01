@@ -40,7 +40,7 @@ app.http('city-name', {
 
         try {
             if (!cachedSecret) {
-                const secretName = "geo-name-mongo-connection-string";
+                const secretName = "geo-names-mongo-connection-string";
                 const secret = await client.getSecret(secretName);
                 cachedSecret = secret.value;
             }
