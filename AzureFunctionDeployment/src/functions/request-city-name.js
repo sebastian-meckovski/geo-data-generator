@@ -17,7 +17,7 @@ function haversine(lat1, lon1, lat2, lon2) {
     const toRadians = (degrees) => degrees * (Math.PI / 180);
     const R = 6371; // Radius of the Earth in kilometers
     const dLat = toRadians(lat2 - lat1);
-    const dLon = toRadians(lon2 - lon1);
+    const dLon = toRadians(lon1 - lon2);
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
               Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
@@ -51,10 +51,13 @@ app.http('city-name', {
             }
 
             const geohash = ngeohash.encode(latitude, longitude).substring(0, 4);
+            const neighbors = ngeohash.neighbors(geohash).map(hash => hash.substring(0, 4));
+            const geohashesToCheck = [geohash, ...neighbors];
+
             const database = mongoClient.db('city-names-db');
             const collectionName = `cities-${language}`;
             const collection = database.collection(collectionName);
-            const query = { geohash: { $regex: `^${geohash}` } };
+            const query = { geohash: { $in: geohashesToCheck.map(hash => new RegExp(`^${hash}`)) } };
             const results = await collection.find(query).toArray();
 
             // Filter results to only include coordinates within the circles
