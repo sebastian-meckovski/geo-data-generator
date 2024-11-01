@@ -54,7 +54,7 @@ app.http('city-name', {
             const neighbors = ngeohash.neighbors(geohash).map(hash => hash.substring(0, 4));
             const geohashesToCheck = [geohash, ...neighbors];
 
-            const database = mongoClient.db('city-name-db');
+            const database = mongoClient.db('city-names-db');
             const collection = database.collection('cities_database');
             const query = { geohash: { $in: geohashesToCheck.map(hash => new RegExp(`^${hash}`)) } };
             const results = await collection.find(query).toArray();
