@@ -2,7 +2,10 @@ name: Deploy Node.js project to Azure Function App
 
 on:
   push:
-    branches: ["master"]
+    branches:
+      - 'master'
+    paths:
+      - 'AzureFunctionDeployment/**'
 
 env:
   AZURE_FUNCTIONAPP_NAME: 'geo-name-reverse-lookup'   # set this to your function app name on Azure

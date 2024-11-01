@@ -169,15 +169,17 @@ for language in languages:
         cities_with_country_admin1_alternates['name_country']
     )
 
-    indices_to_remove = cities_with_country_admin1_alternates[
+    country_names_indices_to_remove = cities_with_country_admin1_alternates[
         cities_with_country_admin1_alternates.apply(check_names_city_country, axis=1)
     ].index
 
-    cities_with_country_admin1_alternates.loc[indices_to_remove, 'alternate_name_country'] = np.nan
+    cities_with_country_admin1_alternates.loc[country_names_indices_to_remove, 'alternate_name_country'] = np.nan
 
-    indices_to_remove = cities_with_country_admin1_alternates[
+    admin1_names_indices_to_remove = cities_with_country_admin1_alternates[
         cities_with_country_admin1_alternates.apply(check_names_city_admin1, axis=1)
     ].index 
+
+    cities_with_country_admin1_alternates.loc[admin1_names_indices_to_remove, 'alternate_name_admin1'] = np.nan
 
     import_dataframe_to_mongo(
         cities_with_country_admin1_alternates[['geoname_id_city', 'latitude', 'longitude', 'geohash', 'country_code', 'population', 'estimated_radius', 'alternate_name_city', 'alternate_name_admin1', 'alternate_name_country']],
