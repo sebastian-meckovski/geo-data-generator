@@ -34,8 +34,8 @@ app.http('city-name', {
         const longitude = parseFloat(request.query.get('longitude'));
         const latitude = parseFloat(request.query.get('latitude'));
 
-        if (!language || isNaN(longitude) || isNaN(latitude)) {
-            return { body: JSON.stringify({ error: 'Missing or invalid parameters' }), status: 400, headers: { 'Content-Type': 'application/json' } };
+        if (isNaN(longitude) || isNaN(latitude)) {
+            return { body: JSON.stringify({ error: 'Missing or invalid coordinates' }), status: 400, headers: { 'Content-Type': 'application/json' } };
         }
 
         try {
@@ -55,8 +55,7 @@ app.http('city-name', {
             const geohashesToCheck = [geohash, ...neighbors];
 
             const database = mongoClient.db('city-names-db');
-            const collectionName = `cities-${language}`;
-            const collection = database.collection(collectionName);
+            const collection = database.collection('cities_database');
             const query = { geohash: { $in: geohashesToCheck.map(hash => new RegExp(`^${hash}`)) } };
             const results = await collection.find(query).toArray();
 
@@ -66,7 +65,7 @@ app.http('city-name', {
                 return distance <= (city.estimated_radius / 1000); // Convert radius to kilometers
             });
 
-            // If no results found, check within a 2 km radius
+            // If no results found, check within a 5 km radius
             if (filteredResults.length === 0) {
                 filteredResults = results.filter(city => {
                     const distance = haversine(latitude, longitude, city.latitude, city.longitude);
@@ -84,13 +83,27 @@ app.http('city-name', {
                 return distance < nearest.distance ? { city, distance } : nearest;
             }, { city: null, distance: Infinity }).city;
 
-            // Return only the specified fields
-            const result = {
-                countryCode: nearestCity.country_code,
-                cityName: nearestCity.alternate_name_city,
-                adminSubDivisionName: nearestCity.alternate_name_admin1,
-                countryName: nearestCity.alternate_name_country
-            };
+            // Prepare the result based on the language parameter
+            let result;
+            if (language) {
+                if (nearestCity.names[language]) {
+                    result = {
+                        geonameId: nearestCity.geoname_id_city,
+                        countryCode: nearestCity.country_code,
+                        cityName: nearestCity.names[language].city,
+                        adminSubDivisionName: nearestCity.names[language].admin1,
+                        countryName: nearestCity.names[language].country
+                    };
+                } else {
+                    return { body: JSON.stringify({ error: `No data found for language: ${language}` }), status: 404, headers: { 'Content-Type': 'application/json' } };
+                }
+            } else {
+                result = {
+                    geonameId: nearestCity.geoname_id_city,
+                    countryCode: nearestCity.country_code,
+                    names: nearestCity.names
+                };
+            }
 
             return { body: JSON.stringify(result), headers: { 'Content-Type': 'application/json' } };
         } catch (error) {
