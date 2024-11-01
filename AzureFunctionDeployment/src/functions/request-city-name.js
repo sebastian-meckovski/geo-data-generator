@@ -70,7 +70,7 @@ app.http('city-name', {
             if (filteredResults.length === 0) {
                 filteredResults = results.filter(city => {
                     const distance = haversine(latitude, longitude, city.latitude, city.longitude);
-                    return distance <= 2; // 2 km radius
+                    return distance <= 5; // 5 km radius
                 });
             }
 
