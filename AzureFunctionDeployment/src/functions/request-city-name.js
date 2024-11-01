@@ -4,7 +4,7 @@ const { SecretClient } = require('@azure/keyvault-secrets');
 const { MongoClient } = require('mongodb');
 const ngeohash = require('ngeohash');
 
-const keyVaultName = process.env.KEY_VAULT_NAME || "MongoDB-credentials";
+const keyVaultName = "MongoDB-credentials";
 const keyVaultUrl = `https://${keyVaultName}.vault.azure.net`;
 const credential = new DefaultAzureCredential();
 const client = new SecretClient(keyVaultUrl, credential);
