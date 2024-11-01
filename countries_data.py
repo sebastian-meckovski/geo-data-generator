@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import geopandas as gpd
-from helpers import add_geohash, calculate_radius, check_names_city_admin1, check_names_city_country, determine_priority, download_and_extract, geodesic_point_buffer
+from helpers import add_geohash, calculate_radius, check_names_admin1_country, check_names_city_admin1, check_names_city_country, determine_priority, download_and_extract, geodesic_point_buffer
 from import_to_mongo import import_dataframe_to_mongo
 
 # Define output languages
@@ -180,6 +180,12 @@ for language in languages:
     ].index 
 
     cities_with_country_admin1_alternates.loc[admin1_names_indices_to_remove, 'alternate_name_admin1'] = np.nan
+
+    admin1_names_vs_country_indices_to_remove = cities_with_country_admin1_alternates[
+        cities_with_country_admin1_alternates.apply(check_names_admin1_country, axis=1)
+    ].index 
+
+    cities_with_country_admin1_alternates.loc[admin1_names_vs_country_indices_to_remove, 'alternate_name_admin1'] = np.nan
 
     import_dataframe_to_mongo(
         cities_with_country_admin1_alternates[['geoname_id_city', 'latitude', 'longitude', 'geohash', 'country_code', 'population', 'estimated_radius', 'alternate_name_city', 'alternate_name_admin1', 'alternate_name_country']],

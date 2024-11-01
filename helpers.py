@@ -68,3 +68,8 @@ def check_names_city_admin1(row):
     name = str(row['alternate_name_city']).lower().strip()
     admin1 = str(row['alternate_name_admin1']).lower().strip()
     return name in admin1 or admin1 in name
+
+def check_names_admin1_country(row):
+    country = str(row['alternate_name_country']).lower().strip()
+    admin1 = str(row['alternate_name_admin1']).lower().strip()
+    return country in admin1 or admin1 in country
