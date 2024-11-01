@@ -40,7 +40,7 @@ app.http('city-name', {
 
         try {
             if (!cachedSecret) {
-                const secretName = "geo-names-mongo-connection-string";
+                const secretName = "geo-name-mongo-connection-string";
                 const secret = await client.getSecret(secretName);
                 cachedSecret = secret.value;
             }
@@ -54,7 +54,7 @@ app.http('city-name', {
             const neighbors = ngeohash.neighbors(geohash).map(hash => hash.substring(0, 4));
             const geohashesToCheck = [geohash, ...neighbors];
 
-            const database = mongoClient.db('city-names-db');
+            const database = mongoClient.db('city-name-db');
             const collection = database.collection('cities_database');
             const query = { geohash: { $in: geohashesToCheck.map(hash => new RegExp(`^${hash}`)) } };
             const results = await collection.find(query).toArray();
@@ -86,13 +86,13 @@ app.http('city-name', {
             // Prepare the result based on the language parameter
             let result;
             if (language) {
-                if (nearestCity.names[language]) {
+                if (nearestCity.name[language]) {
                     result = {
                         geonameId: nearestCity.geoname_id_city,
                         countryCode: nearestCity.country_code,
-                        cityName: nearestCity.names[language].city,
-                        adminSubDivisionName: nearestCity.names[language].admin1,
-                        countryName: nearestCity.names[language].country
+                        cityName: nearestCity.name[language].city,
+                        adminSubDivisionName: nearestCity.name[language].admin1,
+                        countryName: nearestCity.name[language].country
                     };
                 } else {
                     return { body: JSON.stringify({ error: `No data found for language: ${language}` }), status: 404, headers: { 'Content-Type': 'application/json' } };
@@ -101,7 +101,7 @@ app.http('city-name', {
                 result = {
                     geonameId: nearestCity.geoname_id_city,
                     countryCode: nearestCity.country_code,
-                    names: nearestCity.names
+                    name: nearestCity.name
                 };
             }
 
