@@ -26,5 +26,6 @@ jobs:
         env:
           LANGUAGES: ${{ vars.LANGUAGES }}
           MONGO_DATABASE_NAME: ${{ vars.MONGO_DATABASE_NAME }}
+          MONGO_COLLECTION_NAME: ${{ vars.MONGO_COLLECTION_NAME }}
           MONGO_DB_CONN_STRING: ${{ secrets.MONGO_DB_CONN_STRING }}
         run: python countries_data.py

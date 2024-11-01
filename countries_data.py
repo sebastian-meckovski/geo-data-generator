@@ -9,6 +9,7 @@ from import_to_mongo import import_dataframe_to_mongo
 languages = os.environ.get('LANGUAGES').split(',')
 mongo_conn_string = os.environ.get('MONGO_DB_CONN_STRING')
 mongo_database_name = os.environ.get('MONGO_DATABASE_NAME')
+mongo_collection_name = os.environ.get('MONGO_COLLECTION_NAME')
 
 # Define the file paths (these will be the extracted file names)
 global_cities_path = 'allCountries.txt'
@@ -143,28 +144,24 @@ cities_with_country_admin1_geocodes = points_buffer_gdf[
     ~points_buffer_gdf.index.isin(intersecting_larger_population_df.index) 
 ]
 
+combined_data = {}
+
 for language in languages:
     filtered_alternate_names = alternate_names_df[alternate_names_df['iso_language'] == language].copy()
-
     filtered_alternate_names['priority'] = filtered_alternate_names.apply(determine_priority, axis=1)
-
     filtered_alternate_names.sort_values(by=['priority', 'geoname_id'], inplace=True)
-
     filtered_alternate_names = filtered_alternate_names.groupby('geoname_id').first().reset_index()
 
     cities_with_country_admin1_alternates = pd.merge(cities_with_country_admin1_geocodes, filtered_alternate_names[['geoname_id', 'alternate_name']], 
-                                                how='left', left_on='geoname_id_city', right_on='geoname_id').drop('geoname_id', axis=1)
-
+                                                     how='left', left_on='geoname_id_city', right_on='geoname_id').drop('geoname_id', axis=1)
     cities_with_country_admin1_alternates['alternate_name'] = cities_with_country_admin1_alternates['alternate_name'].fillna(
         cities_with_country_admin1_alternates['ascii_name']
     )
 
     cities_with_country_admin1_alternates = pd.merge(cities_with_country_admin1_alternates, filtered_alternate_names[['geoname_id', 'alternate_name']], 
-                                                    how='left', left_on='geoname_id_admin1', right_on='geoname_id', suffixes=('_city','_admin1')).drop('geoname_id', axis=1)
-
+                                                     how='left', left_on='geoname_id_admin1', right_on='geoname_id', suffixes=('_city','_admin1')).drop('geoname_id', axis=1)
     cities_with_country_admin1_alternates = pd.merge(cities_with_country_admin1_alternates, filtered_alternate_names[['geoname_id', 'alternate_name']], 
-                                                    how='left', left_on='geoname_id_country', right_on='geoname_id').drop('geoname_id', axis=1).rename(columns={'alternate_name': 'alternate_name_country'})
-    
+                                                     how='left', left_on='geoname_id_country', right_on='geoname_id').drop('geoname_id', axis=1).rename(columns={'alternate_name': 'alternate_name_country'})
     cities_with_country_admin1_alternates['alternate_name_country'] = cities_with_country_admin1_alternates['alternate_name_country'].fillna(
         cities_with_country_admin1_alternates['name_country']
     )
@@ -172,25 +169,38 @@ for language in languages:
     country_names_indices_to_remove = cities_with_country_admin1_alternates[
         cities_with_country_admin1_alternates.apply(check_names_city_country, axis=1)
     ].index
-
     cities_with_country_admin1_alternates.loc[country_names_indices_to_remove, 'alternate_name_country'] = np.nan
 
     admin1_names_indices_to_remove = cities_with_country_admin1_alternates[
         cities_with_country_admin1_alternates.apply(check_names_city_admin1, axis=1)
     ].index 
-
     cities_with_country_admin1_alternates.loc[admin1_names_indices_to_remove, 'alternate_name_admin1'] = np.nan
 
     admin1_names_vs_country_indices_to_remove = cities_with_country_admin1_alternates[
         cities_with_country_admin1_alternates.apply(check_names_admin1_country, axis=1)
     ].index 
-
     cities_with_country_admin1_alternates.loc[admin1_names_vs_country_indices_to_remove, 'alternate_name_admin1'] = np.nan
 
-    import_dataframe_to_mongo(
-        cities_with_country_admin1_alternates[['geoname_id_city', 'latitude', 'longitude', 'geohash', 'country_code', 'population', 'estimated_radius', 'alternate_name_city', 'alternate_name_admin1', 'alternate_name_country']],
-        language,
-        mongo_conn_string,
-        mongo_database_name
-    )
+    # Iterate through the rows and update the combined_data dictionary
+    for _, row in cities_with_country_admin1_alternates.iterrows():
+        geoname_id_city = row['geoname_id_city']
+        if geoname_id_city not in combined_data:
+            combined_data[geoname_id_city] = {
+                'geoname_id_city': geoname_id_city,
+                'latitude': row['latitude'],
+                'longitude': row['longitude'],
+                'geohash': row['geohash'],
+                'country_code': row['country_code'],
+                'population': row['population'],
+                'estimated_radius': row['estimated_radius'],
+                'name': {}
+            }
+        combined_data[geoname_id_city]['name'][language] = {
+            'city': row['alternate_name_city'] if pd.notna(row['alternate_name_city']) else None,
+            'admin1': row['alternate_name_admin1'] if pd.notna(row['alternate_name_admin1']) else None,
+            'country': row['alternate_name_country'] if pd.notna(row['alternate_name_country']) else None
+        }
 
+nested_json_list = list(combined_data.values())
+
+import_dataframe_to_mongo(nested_json_list, mongo_conn_string, mongo_database_name, "cities_database")
