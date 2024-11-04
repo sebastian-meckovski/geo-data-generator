@@ -25,6 +25,7 @@ jobs:
       - name: Run script
         env:
           LANGUAGES: ${{ vars.LANGUAGES }}
+          POPULATION_THRESHOLD: ${{vars.POPULATION_THRESHOLD}}
           MONGO_DATABASE_NAME: ${{ vars.MONGO_DATABASE_NAME }}
           MONGO_COLLECTION_NAME: ${{ vars.MONGO_COLLECTION_NAME }}
           MONGO_DB_CONN_STRING: ${{ secrets.MONGO_DB_CONN_STRING }}

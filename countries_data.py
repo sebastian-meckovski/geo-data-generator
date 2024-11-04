@@ -10,6 +10,7 @@ languages = os.environ.get('LANGUAGES').split(',')
 mongo_conn_string = os.environ.get('MONGO_DB_CONN_STRING')
 mongo_database_name = os.environ.get('MONGO_DATABASE_NAME')
 mongo_collection_name = os.environ.get('MONGO_COLLECTION_NAME')
+population_threshold = int(os.environ.get('POPULATION_THRESHOLD'))
 
 # Define the file paths (these will be the extracted file names)
 global_cities_path = 'allCountries.txt'
@@ -98,7 +99,7 @@ feature_codes = [
     'PPLG', 'PPLL', 'PPLS', 'PPLF', 'PPLR'
 ]
 
-filtered_cities_df = cities_df[cities_df['feature_code'].isin(feature_codes) & (cities_df['population'] >= 20000)]
+filtered_cities_df = cities_df[cities_df['feature_code'].isin(feature_codes) & (cities_df['population'] >= population_threshold)]
 
 # Merge the DataFrames on the country code
 cities_with_country = pd.merge(filtered_cities_df, countries_df[['geoname_id', 'name_country', 'country_code']], on='country_code', how='left', suffixes=('_city', '_country'))

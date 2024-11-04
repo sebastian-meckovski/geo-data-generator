@@ -31,11 +31,11 @@ def calculate_radius(population):
   elif 500000 <= population < 1000000:
     return 4000
   elif 1000000 <= population < 5000000:
-    return 6000
+    return 12000
   elif 5000000 <= population < 10000000:
-    return 14000
+    return 15000
   else: 
-    return 16000
+    return 18000
 
 def add_geohash(row):
   """Calculates the geohash for a given latitude and longitude."""
