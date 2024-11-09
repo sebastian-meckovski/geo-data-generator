@@ -95,7 +95,7 @@ alternate_names_df[['is_preferred_name', 'is_short_name', 'is_colloquial', 'is_h
 countries_df = cities_df[cities_df['feature_code'].isin(['PCLI', 'PCLS', 'PCLIX', 'TERR', 'PCLD', 'PCL', 'PCLF'])].rename(columns={'name': 'name_country'})
 
 feature_codes = [
-    'PPLA2', 'PPLA', 'PPLC', 'PPL', 'PPLW',
+    'PPLA', 'PPLA2', 'PPLA3', 'PPLC', 'PPL', 'PPLW',
     'PPLG', 'PPLL', 'PPLS', 'PPLF', 'PPLR'
 ]
 
