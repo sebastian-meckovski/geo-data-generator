@@ -59,17 +59,40 @@ app.http('city-name', {
             const query = { geohash: { $in: geohashesToCheck.map(hash => new RegExp(`^${hash}`)) } };
             const results = await collection.find(query).toArray();
 
-            // Filter results to only include coordinates within the circles
+            // Filter results based on estimated radius and search radius
             let filteredResults = results.filter(city => {
                 const distance = haversine(latitude, longitude, city.latitude, city.longitude);
                 return distance <= (city.estimated_radius / 1000); // Convert radius to kilometers
             });
 
-            // If no results found, check within a 5 km radius
+            // If no results found, check within a 12 km radius and population > 300,000
             if (filteredResults.length === 0) {
                 filteredResults = results.filter(city => {
                     const distance = haversine(latitude, longitude, city.latitude, city.longitude);
-                    return distance <= 5; // 5 km radius
+                    return distance <= 12 && city.population > 300000; 
+                });
+            }
+
+            // If still no results, check within an 8 km radius and population > 100,000
+            if (filteredResults.length === 0) {
+                filteredResults = results.filter(city => {
+                    const distance = haversine(latitude, longitude, city.latitude, city.longitude);
+                    return distance <= 8 && city.population > 100000; 
+                });
+            }
+
+            // If still no results, check within an 8 km radius and population > 100,000
+            if (filteredResults.length === 0) {
+                filteredResults = results.filter(city => {
+                    const distance = haversine(latitude, longitude, city.latitude, city.longitude);
+                    return distance <= 4 && city.population > 100000; 
+                });
+            }
+            // If still no results, check within an 2 km radius
+            if (filteredResults.length === 0) {
+                filteredResults = results.filter(city => {
+                    const distance = haversine(latitude, longitude, city.latitude, city.longitude);
+                    return distance <= 2; 
                 });
             }
 
