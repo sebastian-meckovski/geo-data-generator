@@ -194,6 +194,7 @@ for language in languages:
                 'country_code': row['country_code'],
                 'population': row['population'],
                 'estimated_radius': row['estimated_radius'],
+                'feature_code': row['feature_code'],
                 'name': {}
             }
         combined_data[geoname_id_city]['name'][language] = {
