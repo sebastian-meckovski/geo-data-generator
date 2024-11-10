@@ -1,0 +1,19 @@
+{
+  "name": "geo-lookup-express-server",
+  "version": "1.0.0",
+  "description": "A Node.js/Express.js API for efficient location-based lookups. It currently finds the nearest city to given GPS coordinates using a MongoDB database. Future features will include searching by country code, city name, and other location-related queries.",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1",
+    "mongodb": "^6.10.0",
+    "ngeohash": "^0.6.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}
