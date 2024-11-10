@@ -4,7 +4,7 @@ const ngeohash = require('ngeohash');
 const { haversine } = require('./utils/harvesine'); 
 
 const app = express();
-const port = 5000;
+const port = 5050;
 const connString = process.env.MONGO_DB_CONN_STRING; 
 
 if (!connString) {
