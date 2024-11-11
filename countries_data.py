@@ -74,7 +74,7 @@ admin1_codes_headers = [
     'code', 'name', 'name_ascii', 'geoname_id_admin1'
 ]
 
-admin1_codes_usecols = ['code', 'name', 'geoname_id_admin1']
+admin1_codes_usecols = ['code', 'name', 'geoname_id_admin1', 'name_ascii']
 
 admin1_codes_dtype = {
     'code': str, 'name': str, 'name_ascii': str, 'geoname_id_admin1': 'Int64'
@@ -85,8 +85,7 @@ alternate_names_df = pd.read_csv(alternate_names_path, sep='\t', header=None, na
 print(f'Reading file: {global_cities_path}')
 cities_df = pd.read_csv(global_cities_path, sep='\t', header=None, names=global_cities_headers, dtype=global_cities_dtype, low_memory=False, keep_default_na=False, na_values='', encoding='utf-8', usecols=global_cities_headers_usecols)
 print(f'Reading file: {admin1_codes_path}')
-admin1_codes_df = pd.read_csv(admin1_codes_path, sep='\t', header=None, names=admin1_codes_headers, dtype=admin1_codes_dtype, low_memory=False, keep_default_na=False, na_values='', encoding='utf-8', usecols=admin1_codes_usecols)
-
+admin1_codes_df = pd.read_csv(admin1_codes_path, sep='\t', header=None, names=admin1_codes_headers, dtype=admin1_codes_dtype, low_memory=False, keep_default_na=False, na_values='', encoding='utf-8', usecols=admin1_codes_usecols).rename(columns={"name_ascii": "admin1_ascii_name"})
 # Fill <NA> values with False for the specified columns
 alternate_names_df[['is_preferred_name', 'is_short_name', 'is_colloquial', 'is_historic']] = \
     alternate_names_df[['is_preferred_name', 'is_short_name', 'is_colloquial', 'is_historic']].fillna(False)
@@ -107,12 +106,34 @@ cities_with_country = pd.merge(filtered_cities_df, countries_df[['geoname_id', '
 # Include first-order administrative division in cities_with_country_table
 cities_with_country['admin1_geocode'] = cities_with_country['country_code'] + '.' + cities_with_country['admin1_code']
 
-cities_with_country_admin1_geocodes = pd.merge(cities_with_country, admin1_codes_df[['code', 'name', 'geoname_id_admin1']], right_on='code',
+cities_with_country_admin1_geocodes = pd.merge(cities_with_country, admin1_codes_df, right_on='code',
                                                left_on='admin1_geocode', how='left',  suffixes=('_city', '_admin1')).drop('code', axis=1)
 
 # Remove the admin_area column if the city name is unique within a country. Keep it if multiple cities have the same name in the country.
-cities_with_country_admin1_geocodes["city_count"] = cities_with_country_admin1_geocodes.groupby(["geoname_id_country", "name_city"])["geoname_id_city"].transform("count")
-cities_with_country_admin1_geocodes["geoname_id_admin1"] = cities_with_country_admin1_geocodes.apply(lambda row: row["geoname_id_admin1"] if row["city_count"] > 1 else np.nan, axis=1)
+def remove_redundant_admin1(df):
+    """
+    Removes admin1 information (name_admin1 and admin1_ascii_name) 
+    if the ASCII city name is unique within its country.
+
+    Args:
+      df: The GeoDataFrame containing city information.
+
+    Returns:
+      The modified GeoDataFrame.
+    """
+
+    df = df.copy()  # Create a copy to avoid SettingWithCopyWarning
+
+    # Calculate the count of cities with the same ASCII name within each country
+    df["city_count"] = df.groupby(["geoname_id_country", "ascii_name"])["geoname_id_city"].transform("count")
+
+    # Set name_admin1 and admin1_ascii_name to NaN where city_count is 1
+    df.loc[df["city_count"] == 1, ["name_admin1", "admin1_ascii_name"]] = np.nan
+
+    return df
+
+# Apply the function to your DataFrame
+cities_with_country_admin1_geocodes = remove_redundant_admin1(cities_with_country_admin1_geocodes)
 
 print('Calculating radius')
 cities_with_country_admin1_geocodes['estimated_radius'] = cities_with_country_admin1_geocodes['population'].apply(calculate_radius)
@@ -201,6 +222,11 @@ for language in languages:
             'city': row['alternate_name_city'] if pd.notna(row['alternate_name_city']) else None,
             'admin1': row['alternate_name_admin1'] if pd.notna(row['alternate_name_admin1']) else None,
             'country': row['alternate_name_country'] if pd.notna(row['alternate_name_country']) else None
+        }
+        combined_data[geoname_id_city]['name']['ascii'] = {
+            'city': row['ascii_name'].lower().replace(" ", "-") if pd.notna(row['ascii_name']) else None,
+            'admin1': row['admin1_ascii_name'].lower().replace(" ", "-") if pd.notna(row['admin1_ascii_name']) else None,
+            'country': None  # As you specified
         }
 
 nested_json_list = list(combined_data.values())
