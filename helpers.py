@@ -1,3 +1,4 @@
+import numpy as np
 import requests
 import zipfile
 import io
@@ -60,16 +61,41 @@ def determine_priority(row):
         return 4
     
 def check_names_city_country(row):
-    name = str(row['alternate_name_city']).lower().strip()
-    country = str(row['alternate_name_country']).lower().strip()
-    return country in name
+    name = str(row['ascii_name_city']).lower().strip()
+    country = str(row['ascii_name_country']).lower().strip()
+    return country in name or name in country
 
 def check_names_city_admin1(row):
-    name = str(row['alternate_name_city']).lower().strip()
-    admin1 = str(row['alternate_name_admin1']).lower().strip()
+    name = str(row['ascii_name_city']).lower().strip()
+    admin1 = str(row['admin1_ascii_name']).lower().strip()
     return name in admin1 or admin1 in name
 
 def check_names_admin1_country(row):
-    country = str(row['alternate_name_country']).lower().strip()
-    admin1 = str(row['alternate_name_admin1']).lower().strip()
+    country = str(row['ascii_name_country']).lower().strip()
+    admin1 = str(row['admin1_ascii_name']).lower().strip()
     return country in admin1 or admin1 in country
+
+def remove_redundant_admin1(df):
+    """
+    Removes admin1 information (name_admin1 and admin1_ascii_name) 
+    if the ASCII city name is unique within its country.
+
+    Args:
+      df: The GeoDataFrame containing city information.
+
+    Returns:
+      The modified GeoDataFrame.
+    """
+
+    df = df.copy()  # Create a copy to avoid SettingWithCopyWarning
+
+    # Calculate the count of cities with the same ASCII name within each country
+    df["city_count"] = df.groupby(["geoname_id_country", "ascii_name_city"])["geoname_id_city"].transform("count")
+    # Set name_admin1 and admin1_ascii_name to NaN where city_count is 1
+    df.loc[df["city_count"] == 1, ["alternate_name_admin1", "admin1_ascii_name"]] = np.nan
+    # Calculate the count of cities with the same name within each country
+    df["city_count"] = df.groupby(["geoname_id_country", "name_city"])["geoname_id_city"].transform("count")
+    # Set name_admin1 and admin1_ascii_name to NaN where city_count is 1
+    df.loc[df["city_count"] == 1, ["alternate_name_admin1", "admin1_ascii_name"]] = np.nan
+
+    return df

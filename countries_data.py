@@ -2,7 +2,12 @@ import os
 import pandas as pd
 import numpy as np
 import geopandas as gpd
-from helpers import add_geohash, calculate_radius, check_names_admin1_country, check_names_city_admin1, check_names_city_country, determine_priority, download_and_extract, geodesic_point_buffer
+from pyproj import CRS, Transformer
+from shapely.geometry import Point
+from shapely.ops import transform
+import json
+
+from helpers import add_geohash, calculate_radius, check_names_admin1_country, check_names_city_admin1, check_names_city_country, determine_priority, download_and_extract, remove_redundant_admin1
 from import_to_mongo import import_dataframe_to_mongo
 
 # Define output languages
@@ -27,10 +32,6 @@ download_and_extract(global_cities_url, global_cities_path)
 download_and_extract(alternate_names_url, alternate_names_path)
 download_and_extract(admin1_codes_url, admin1_codes_path)
 
-global_cities_path = 'allCountries.txt'
-alternate_names_path = 'alternateNamesV2.txt'
-admin1_codes_path = 'admin1CodesASCII.txt'
-
 global_cities_headers = [
     'geoname_id', 'name', 'ascii_name', 'alternate_names', 'latitude', 'longitude',
     'feature_class', 'feature_code', 'country_code', 'cc2', 'admin1_code',
@@ -45,7 +46,7 @@ global_cities_headers_usecols = [
 
 # Define the data types for the columns in the global cities file
 global_cities_dtype = {
-    'geoname_id': 'Int64', 'name': str, 'asciiname': str, 'alternatenames': str,
+    'geoname_id': 'Int64', 'name': str, 'ascii_name': str, 'alternatenames': str,
     'latitude': float, 'longitude': float, 'feature_class': str, 'feature_code': str,
     'country_code': str, 'cc2': str, 'admin1_code': str, 'admin2_code': str,
     'admin3_code': str, 'admin4_code': str, 'population': 'Int64', 'elevation': float,
@@ -101,7 +102,7 @@ feature_codes = [
 filtered_cities_df = cities_df[cities_df['feature_code'].isin(feature_codes) & (cities_df['population'] >= population_threshold)]
 
 # Merge the DataFrames on the country code
-cities_with_country = pd.merge(filtered_cities_df, countries_df[['geoname_id', 'name_country', 'country_code']], on='country_code', how='left', suffixes=('_city', '_country'))
+cities_with_country = pd.merge(filtered_cities_df, countries_df[['geoname_id', 'name_country', 'country_code', 'ascii_name']], on='country_code', how='left', suffixes=('_city', '_country'))
 
 # Include first-order administrative division in cities_with_country_table
 cities_with_country['admin1_geocode'] = cities_with_country['country_code'] + '.' + cities_with_country['admin1_code']
@@ -109,41 +110,23 @@ cities_with_country['admin1_geocode'] = cities_with_country['country_code'] + '.
 cities_with_country_admin1_geocodes = pd.merge(cities_with_country, admin1_codes_df, right_on='code',
                                                left_on='admin1_geocode', how='left',  suffixes=('_city', '_admin1')).drop('code', axis=1)
 
-# Remove the admin_area column if the city name is unique within a country. Keep it if multiple cities have the same name in the country.
-def remove_redundant_admin1(df):
-    """
-    Removes admin1 information (name_admin1 and admin1_ascii_name) 
-    if the ASCII city name is unique within its country.
-
-    Args:
-      df: The GeoDataFrame containing city information.
-
-    Returns:
-      The modified GeoDataFrame.
-    """
-
-    df = df.copy()  # Create a copy to avoid SettingWithCopyWarning
-
-    # Calculate the count of cities with the same ASCII name within each country
-    df["city_count"] = df.groupby(["geoname_id_country", "ascii_name"])["geoname_id_city"].transform("count")
-
-    # Set name_admin1 and admin1_ascii_name to NaN where city_count is 1
-    df.loc[df["city_count"] == 1, ["name_admin1", "admin1_ascii_name"]] = np.nan
-
-    return df
-
-# Apply the function to your DataFrame
-cities_with_country_admin1_geocodes = remove_redundant_admin1(cities_with_country_admin1_geocodes)
-
-print('Calculating radius')
-cities_with_country_admin1_geocodes['estimated_radius'] = cities_with_country_admin1_geocodes['population'].apply(calculate_radius)
-
-print('Adding geohash column')
+print('Adding geohashes')
 cities_with_country_admin1_geocodes['geohash'] = cities_with_country_admin1_geocodes.apply(add_geohash, axis=1) 
 
-print('removing overlapping circles')
+print('Adding estimated city radii')
+cities_with_country_admin1_geocodes['estimated_radius'] = cities_with_country_admin1_geocodes['population'].apply(calculate_radius)
+
+def geodesic_point_buffer(lat, lon, distance):
+    # Azimuthal equidistant projection
+    aeqd_proj = CRS.from_proj4(
+        f"+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0")
+    tfmr = Transformer.from_proj(aeqd_proj, aeqd_proj.geodetic_crs)
+    buf = Point(0, 0).buffer(distance)  # distance in metres
+    return transform(tfmr.transform, buf)
+
 points_df = cities_with_country_admin1_geocodes
 
+print('Removing intersecting cirles')
 # Convert the points to circles by buffering them
 points_buffer_gdf = gpd.GeoDataFrame(
     points_df,
@@ -166,6 +149,8 @@ cities_with_country_admin1_geocodes = points_buffer_gdf[
     ~points_buffer_gdf.index.isin(intersecting_larger_population_df.index) 
 ]
 
+print('Creating combined data object')
+# Initialize an empty dictionary to store the combined data
 combined_data = {}
 
 for language in languages:
@@ -176,14 +161,23 @@ for language in languages:
 
     cities_with_country_admin1_alternates = pd.merge(cities_with_country_admin1_geocodes, filtered_alternate_names[['geoname_id', 'alternate_name']], 
                                                      how='left', left_on='geoname_id_city', right_on='geoname_id').drop('geoname_id', axis=1)
+    
     cities_with_country_admin1_alternates['alternate_name'] = cities_with_country_admin1_alternates['alternate_name'].fillna(
-        cities_with_country_admin1_alternates['ascii_name']
+        cities_with_country_admin1_alternates['ascii_name_city']
     )
 
     cities_with_country_admin1_alternates = pd.merge(cities_with_country_admin1_alternates, filtered_alternate_names[['geoname_id', 'alternate_name']], 
                                                      how='left', left_on='geoname_id_admin1', right_on='geoname_id', suffixes=('_city','_admin1')).drop('geoname_id', axis=1)
+    
+    cities_with_country_admin1_alternates['alternate_name_admin1'] = cities_with_country_admin1_alternates['alternate_name_admin1'].fillna(
+        cities_with_country_admin1_alternates['admin1_ascii_name']
+    )
+
+    cities_with_country_admin1_alternates = remove_redundant_admin1(cities_with_country_admin1_alternates)
+
     cities_with_country_admin1_alternates = pd.merge(cities_with_country_admin1_alternates, filtered_alternate_names[['geoname_id', 'alternate_name']], 
                                                      how='left', left_on='geoname_id_country', right_on='geoname_id').drop('geoname_id', axis=1).rename(columns={'alternate_name': 'alternate_name_country'})
+                                                     
     cities_with_country_admin1_alternates['alternate_name_country'] = cities_with_country_admin1_alternates['alternate_name_country'].fillna(
         cities_with_country_admin1_alternates['name_country']
     )
@@ -196,6 +190,7 @@ for language in languages:
     admin1_names_indices_to_remove = cities_with_country_admin1_alternates[
         cities_with_country_admin1_alternates.apply(check_names_city_admin1, axis=1)
     ].index 
+
     cities_with_country_admin1_alternates.loc[admin1_names_indices_to_remove, 'alternate_name_admin1'] = np.nan
 
     admin1_names_vs_country_indices_to_remove = cities_with_country_admin1_alternates[
@@ -224,11 +219,13 @@ for language in languages:
             'country': row['alternate_name_country'] if pd.notna(row['alternate_name_country']) else None
         }
         combined_data[geoname_id_city]['name']['ascii'] = {
-            'city': row['ascii_name'].lower().replace(" ", "-") if pd.notna(row['ascii_name']) else None,
+            'city': row['ascii_name_city'].lower().replace(" ", "-") if pd.notna(row['ascii_name_city']) else None,
             'admin1': row['admin1_ascii_name'].lower().replace(" ", "-") if pd.notna(row['admin1_ascii_name']) else None,
-            'country': None  # As you specified
+            'country': None
         }
 
+# Convert the combined_data dictionary to a list
 nested_json_list = list(combined_data.values())
 
+# Save the nested object to MongoDB
 import_dataframe_to_mongo(nested_json_list, mongo_conn_string, mongo_database_name, "cities_database")
