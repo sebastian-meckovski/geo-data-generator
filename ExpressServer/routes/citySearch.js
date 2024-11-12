@@ -6,7 +6,7 @@ const connString = process.env.MONGO_DB_CONN_STRING;
 let mongoClient = null;
 
 router.get('/', async (req, res) => {
-  const countryCode = req.query.country_code;
+  const countryCode = req.query.country_code.toUpperCase();
   const adminArea = req.query.admin_area; // Optional
   const cityName = req.query.city_name; // Optional
   const language = req.query.language; // Optional
