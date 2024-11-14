@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
       query['name.ascii.city'] = cityName;
     }
     if (adminArea) {
-      query['name.ascii.admin1'] = adminArea.toLowerCase().replace(/-/g, ' ');
+      query['name.ascii.admin1'] = adminArea.toLowerCase();
     }
 
     // If no city is provided, assume it's a request for the capital
