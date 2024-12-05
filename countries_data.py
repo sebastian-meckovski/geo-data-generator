@@ -5,10 +5,8 @@ import geopandas as gpd
 from pyproj import CRS, Transformer
 from shapely.geometry import Point
 from shapely.ops import transform
-import json
-
 from helpers import add_geohash, calculate_radius, check_names_admin1_country, check_names_city_admin1, check_names_city_country, determine_priority, download_and_extract, remove_redundant_admin1
-from import_to_mongo import import_dataframe_to_mongo
+from import_to_mongo import create_atlas_search_index, generate_language_fields, import_dataframe_to_mongo
 
 # Define output languages
 languages = os.environ.get('LANGUAGES').split(',')
@@ -16,6 +14,11 @@ mongo_conn_string = os.environ.get('MONGO_DB_CONN_STRING')
 mongo_database_name = os.environ.get('MONGO_DATABASE_NAME')
 mongo_collection_name = os.environ.get('MONGO_COLLECTION_NAME')
 population_threshold = int(os.environ.get('POPULATION_THRESHOLD'))
+atlas_api_key = os.environ.get('ATLAS_API_KEY')
+atlas_api_private_key = os.environ.get('ATLAS_API_PRIVATE_KEY')
+atlas_cluster_name = os.environ.get('ATLAS_CLUSTER_NAME')
+atlas_search_index_name = os.environ.get('ATLAS_SEARCH_INDEX_NAME')
+atlas_group_id = os.environ.get('ATLAS_GROUP_ID')
 
 # Define the file paths (these will be the extracted file names)
 global_cities_path = 'allCountries.txt'
@@ -228,4 +231,27 @@ for language in languages:
 nested_json_list = list(combined_data.values())
 
 # Save the nested object to MongoDB
-import_dataframe_to_mongo(nested_json_list, mongo_conn_string, mongo_database_name, "cities_database")
+import_dataframe_to_mongo(nested_json_list, mongo_conn_string, mongo_database_name, mongo_collection_name)
+
+search_index_config = {
+    "name": "python-test-2",  # Index name
+    "analyzer": "diacriticFolder",
+    "mappings": {
+        "fields": {
+            "name": {
+                "type": "document",
+                "fields": generate_language_fields(languages)
+            }
+        }
+    },
+    "analyzers": [
+        {
+            "name": "diacriticFolder",
+            "charFilters": [],
+            "tokenizer": {"type": "keyword"},
+            "tokenFilters": [{"type": "icuFolding"}]
+        }
+    ]
+}
+
+create_atlas_search_index(atlas_api_key, atlas_api_private_key, atlas_group_id, atlas_cluster_name, mongo_database_name, mongo_collection_name, atlas_search_index_name, search_index_config)

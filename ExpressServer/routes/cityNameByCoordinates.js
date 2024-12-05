@@ -1,11 +1,31 @@
+// routes/cityNameByCoordinates.js
+
 const express = require('express');
 const router = express.Router();
 const { MongoClient } = require('mongodb');
 const ngeohash = require('ngeohash');
-const { haversine } = require('../utils/harvesine');
+const { haversine } = require('../utils/haversine');
 
 const connString = process.env.MONGO_DB_CONN_STRING;
 let mongoClient = null;
+
+// Function to get MongoDB client
+async function getMongoClient() {
+    if (!mongoClient) {
+        mongoClient = new MongoClient(connString);
+        await mongoClient.connect();
+    }
+    return mongoClient;
+}
+
+// Ensure MongoDB client is closed on process exit
+process.on('SIGINT', async () => {
+    if (mongoClient) {
+        await mongoClient.close();
+        console.log('MongoDB connection closed.');
+    }
+    process.exit();
+});
 
 router.get('/', async (req, res) => {
     const language = req.query.language;
@@ -17,20 +37,18 @@ router.get('/', async (req, res) => {
     }
 
     try {
-        if (!mongoClient) {
-            mongoClient = new MongoClient(connString, { useNewUrlParser: true, useUnifiedTopology: true });
-            await mongoClient.connect();
-        }
+        const client = await getMongoClient();
 
         const geohash = ngeohash.encode(latitude, longitude).substring(0, 4);
         const neighbors = ngeohash.neighbors(geohash).map(hash => hash.substring(0, 4));
         const geohashesToCheck = [geohash, ...neighbors];
 
-        const database = mongoClient.db('city-names-db');
+        const database = client.db('city-names-db');
         const collection = database.collection('cities_database');
         const query = { geohash: { $in: geohashesToCheck.map(hash => new RegExp(`^${hash}`)) } };
         const results = await collection.find(query).toArray();
 
+        // Filtering logic remains unchanged
         let filteredResults = results.filter(city => {
             const distance = haversine(latitude, longitude, city.latitude, city.longitude);
             return distance <= (city.estimated_radius / 1000);
