@@ -29,4 +29,9 @@ jobs:
           MONGO_DATABASE_NAME: ${{ vars.MONGO_DATABASE_NAME }}
           MONGO_COLLECTION_NAME: ${{ vars.MONGO_COLLECTION_NAME }}
           MONGO_DB_CONN_STRING: ${{ secrets.MONGO_DB_CONN_STRING }}
+          ATLAS_API_KEY: ${{ secrets.ATLAS_API_KEY }}
+          ATLAS_API_PRIVATE_KEY: ${{ secrets.ATLAS_API_PRIVATE_KEY }}
+          ATLAS_CLUSTER_NAME: ${{ vars.ATLAS_CLUSTER_NAME }}
+          ATLAS_SEARCH_INDEX_NAME: ${{ vars.ATLAS_SEARCH_INDEX_NAME }}
+          ATLAS_GROUP_ID: ${{ secrets.ATLAS_GROUP_ID }}
         run: python countries_data.py
