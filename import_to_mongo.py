@@ -27,8 +27,6 @@ def create_atlas_search_index(public_key, private_key, group_id, cluster_name, d
     """
     url = f"https://cloud.mongodb.com/api/atlas/v2/groups/{group_id}/clusters/{cluster_name}/search/indexes?pretty=true"
 
-    print(url)
-
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/vnd.atlas.2024-05-30+json"
@@ -72,3 +70,6 @@ def generate_language_fields(languages):
             }
         }
     return language_fields
+
+# TODO: Update API to search by index
+# TODO: Update logic to override/remove old index when generating new one
