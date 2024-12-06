@@ -6,7 +6,8 @@ from pyproj import CRS, Transformer
 from shapely.geometry import Point
 from shapely.ops import transform
 from helpers import add_geohash, calculate_radius, check_names_admin1_country, check_names_city_admin1, check_names_city_country, determine_priority, download_and_extract, remove_redundant_admin1
-from import_to_mongo import create_atlas_search_index, generate_language_fields, import_dataframe_to_mongo
+from import_to_mongo import create_atlas_search_index, delete_atlas_search_index, does_search_index_exist, import_dataframe_to_mongo
+import time
 
 # Define output languages
 languages = os.environ.get('LANGUAGES').split(',')
@@ -14,11 +15,7 @@ mongo_conn_string = os.environ.get('MONGO_DB_CONN_STRING')
 mongo_database_name = os.environ.get('MONGO_DATABASE_NAME')
 mongo_collection_name = os.environ.get('MONGO_COLLECTION_NAME')
 population_threshold = int(os.environ.get('POPULATION_THRESHOLD'))
-atlas_api_key = os.environ.get('ATLAS_API_KEY')
-atlas_api_private_key = os.environ.get('ATLAS_API_PRIVATE_KEY')
-atlas_cluster_name = os.environ.get('ATLAS_CLUSTER_NAME')
 atlas_search_index_name = os.environ.get('ATLAS_SEARCH_INDEX_NAME')
-atlas_group_id = os.environ.get('ATLAS_GROUP_ID')
 
 # Define the file paths (these will be the extracted file names)
 global_cities_path = 'allCountries.txt'
@@ -233,25 +230,53 @@ nested_json_list = list(combined_data.values())
 # Save the nested object to MongoDB
 import_dataframe_to_mongo(nested_json_list, mongo_conn_string, mongo_database_name, mongo_collection_name)
 
-search_index_config = {
-    "name": "python-test-2",  # Index name
-    "analyzer": "diacriticFolder",
-    "mappings": {
-        "fields": {
-            "name": {
-                "type": "document",
-                "fields": generate_language_fields(languages)
-            }
-        }
-    },
-    "analyzers": [
-        {
-            "name": "diacriticFolder",
-            "charFilters": [],
-            "tokenizer": {"type": "keyword"},
-            "tokenFilters": [{"type": "icuFolding"}]
-        }
-    ]
-}
+# Check if the index exists
+index_exists = does_search_index_exist(
+    connection_string=mongo_conn_string,
+    database_name=mongo_database_name,
+    collection_name=mongo_collection_name,
+    index_name=atlas_search_index_name
+)
 
-create_atlas_search_index(atlas_api_key, atlas_api_private_key, atlas_group_id, atlas_cluster_name, mongo_database_name, mongo_collection_name, atlas_search_index_name, search_index_config)
+if index_exists:
+    # If the index exists, delete it
+    print(f"Index {atlas_search_index_name} exists. Deleting it.")
+    delete_atlas_search_index(
+        connection_string=mongo_conn_string,
+        database_name=mongo_database_name,
+        collection_name=mongo_collection_name,
+        index_name=atlas_search_index_name
+    )
+
+    # Wait until the index is fully deleted
+    elapsed_time = 0
+    max_wait_time = 600  # 10 minutes timeout
+    polling_interval = 10  # Check every 10 seconds
+
+    while elapsed_time < max_wait_time:
+        time.sleep(polling_interval)
+        elapsed_time += polling_interval
+        index_exists = does_search_index_exist(
+            connection_string=mongo_conn_string,
+            database_name=mongo_database_name,
+            collection_name=mongo_collection_name,
+            index_name=atlas_search_index_name
+        )
+        if not index_exists:
+            print(f"Index {atlas_search_index_name} successfully deleted.")
+            break
+        print(f"Index {atlas_search_index_name} still exists. Waiting... {elapsed_time}/{max_wait_time} seconds elapsed.")
+
+    if index_exists:
+        print(f"Timed out waiting for index {atlas_search_index_name} to be deleted. Exiting.")
+        exit(1)
+
+# Create the new index
+print(f"Creating new index: {atlas_search_index_name}.")
+create_atlas_search_index(
+    connection_string=mongo_conn_string,
+    database_name=mongo_database_name,
+    collection_name=mongo_collection_name,
+    index_name=atlas_search_index_name,
+    languages=languages
+)

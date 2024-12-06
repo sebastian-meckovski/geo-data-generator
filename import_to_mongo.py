@@ -1,7 +1,7 @@
-import pandas as pd
 from pymongo import MongoClient
-import requests
 from requests.auth import HTTPDigestAuth
+from pymongo.mongo_client import MongoClient
+from pymongo.operations import SearchIndexModel
 
 def import_dataframe_to_mongo(data, connection_string, database, collection_name):
 
@@ -21,37 +21,110 @@ def import_dataframe_to_mongo(data, connection_string, database, collection_name
     print(f"Data imported successfully into {collection_name}!")
 
 
-def create_atlas_search_index(public_key, private_key, group_id, cluster_name, database, collection, index_name, config):
+def create_atlas_search_index(connection_string, database_name, collection_name, index_name, languages):
     """
-    Creates an Atlas Search index using digest authentication.
+    Creates an Atlas Search index using pymongo's SearchIndexModel.
     """
-    url = f"https://cloud.mongodb.com/api/atlas/v2/groups/{group_id}/clusters/{cluster_name}/search/indexes?pretty=true"
+    # Connect to your Atlas deployment
+    client = MongoClient(connection_string)
 
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/vnd.atlas.2024-05-30+json"
-    }
+    # Access the specified database and collection
+    database = client[database_name]
+    collection = database[collection_name]
 
-    payload = {
-        "collectionName": collection,
-        "database": database,
-        "name": index_name,
-        "definition": {
-            "mappings": config["mappings"],
-            "analyzers": config["analyzers"]
-        }
-    }
+    # Define the search index model
+    search_index_model = SearchIndexModel(
+        definition={
+            "mappings": {
+                "fields": {
+                    "name": {
+                        "type": "document",
+                        "fields": generate_language_fields(languages)
+                    }
+                }
+            },
+            "analyzers": [
+                {
+                    "name": "diacriticFolder",
+                    "charFilters": [],
+                    "tokenizer": {"type": "keyword"},
+                    "tokenFilters": [{"type": "icuFolding"}]
+                }
+            ]
+        },
+        name=index_name
+    )
 
-    # Use HTTPDigestAuth for digest authentication
-    auth = HTTPDigestAuth(public_key, private_key)
+    # Create the search index
+    try:
+        result = collection.create_search_index(model=search_index_model)
+        print(f"Index {index_name} created successfully: {result}")
+    except Exception as e:
+        print(f"Failed to create index: {e}")
+    finally:
+        client.close()
 
-    response = requests.post(url, headers=headers, auth=auth, json=payload)
 
-    if response.status_code == 201:
-        print(f"Index {index_name} created successfully.")
-    else:
-        print(f"Failed to create index: {response.status_code}")
-        print(response.json())
+def delete_atlas_search_index(connection_string, database_name, collection_name, index_name):
+    """
+    Deletes an Atlas Search index using pymongo's dropSearchIndex method.
+    """
+    # Connect to your Atlas deployment
+    client = MongoClient(connection_string)
+
+    try:
+        # Access the specified database and collection
+        database = client[database_name]
+        collection = database[collection_name]
+
+        # Drop the search index
+        collection.drop_search_index(index_name)
+        print(f"Index {index_name} deleted successfully")
+    except Exception as e:
+        print(f"Failed to delete index {index_name}: {e}")
+    finally:
+        # Close the connection
+        client.close()
+
+
+def does_search_index_exist(connection_string, database_name, collection_name, index_name):
+    """
+    Checks if a specific Atlas Search index exists in a collection.
+
+    Parameters:
+    - connection_string: MongoDB Atlas connection string.
+    - database_name: Name of the database.
+    - collection_name: Name of the collection.
+    - index_name: Name of the search index to check.
+
+    Returns:
+    - True if the index exists, False otherwise.
+    """
+    # Connect to your Atlas deployment
+    client = MongoClient(connection_string)
+
+    try:
+        # Access the specified database and collection
+        database = client[database_name]
+        collection = database[collection_name]
+
+        # Get a list of the collection's search indexes
+        cursor = collection.list_search_indexes()
+
+        # Check if the index name exists
+        for index in cursor:
+            if index["name"] == index_name:
+                return True
+
+        return False
+
+    except Exception as e:
+        print(f"Error checking search index existence: {e}")
+        return False
+
+    finally:
+        # Close the client connection
+        client.close()
 
 
 def generate_language_fields(languages):
@@ -70,6 +143,3 @@ def generate_language_fields(languages):
             }
         }
     return language_fields
-
-# TODO: Update API to search by index
-# TODO: Update logic to override/remove old index when generating new one
