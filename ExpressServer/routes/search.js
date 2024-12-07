@@ -24,67 +24,65 @@ process.on('SIGINT', async () => {
 });
 
 router.get('/', async (req, res) => {
-    const language = req.query.language;
-    const keyword = req.query.keyword;
+    const language = req.query.language; // Language parameter (e.g., 'pl')
+    const keywords = req.query.keywords; // Keywords parameter (e.g., 'buda weg')
 
-    if (!language || !keyword) {
-        return res.status(400).json({ error: 'Missing language or keyword parameter' });
+    if (!language || !keywords) {
+        return res.status(400).json({ error: 'Missing language or keywords parameter' });
     }
 
     try {
         const client = await getMongoClient();
         const database = client.db('city-names-db');
-        const collection = database.collection('cities_database');
+        const collection = database.collection('cities-collection');
 
-        // Define collation for the query
-        const collation = {
-            locale: 'en', // Use 'pl' for non-English searches, fallback to 'en' for English
-            strength: 1 // Case-insensitive and diacritic-insensitive
-        };
+        // Split the keywords into an array of individual words
+        const keywordArray = keywords.split(' ').map(word => `*${word}*`);
 
-        // Build the query for the specified language
-        const query = {
-            $or: [
-                { [`name.${language}.city`]: keyword },
-                { [`name.${language}.admin1`]: keyword },
-                { [`name.${language}.country`]: keyword }
-            ]
-        };
-        console.log('Trying in original langauge', language)
+        // Construct the $search query
+        const pipeline = [
+            {
+                $search: {
+                    index: "cities-search-index",
+                    compound: {
+                        must: keywordArray.map(keyword => ({
+                            wildcard: {
+                                query: keyword,
+                                path: [
+                                    `name.${language}.country`,
+                                    `name.${language}.admin1`,
+                                    `name.${language}.city`,
+                                    "name.en.country",
+                                    "name.en.admin1",
+                                    "name.en.city"
+                                ],
+                                allowAnalyzedField: true
+                            }
+                        }))
+                    }
+                }
+            },
+            {
+                $sort: { population: -1 } // Order by population descending
+            },
+            {
+                $limit: 5 // Limit the results to 5
+            }
+        ];
 
-        // Execute the search query, ordered by population (descending), limited to 5 results
-        let results = await collection.find(query)
-            .collation(collation)
-            .sort({ population: -1 }) // Order by population descending
-            .limit(5)
-            .toArray();
+        console.log(keywordArray)
 
-        // Fallback to English if no results found
-        if (results.length === 0) {
-            console.log('results are empty. Trying english')
-            const fallbackQuery = {
-                $or: [
-                    { 'name.en.city': { $regex: keyword, $options: 'i' } },
-                    { 'name.en.admin1': { $regex: keyword, $options: 'i' } },
-                    { 'name.en.country': { $regex: keyword, $options: 'i' } }
-                ]
-            };
+        // Execute the aggregation pipeline
+        const results = await collection.aggregate(pipeline).toArray();
+        console.log
 
-            results = await collection.find(fallbackQuery)
-                .collation({ locale: 'en', strength: 1 })
-                .sort({ population: -1 })
-                .limit(5)
-                .toArray();
-        }
-
-        // If still no results found, return 404
         if (results.length === 0) {
             return res.status(404).json({ error: 'No matching records found' });
         }
 
         // Prepare the response
         const response = results.map(result => {
-            const geonameId = parseInt(result.geoname_id_city["$numberInt"] || result.geoname_id_city);
+            const geonameId = result.geoname_id_city;
             const countryCode = result.country_code;
             const nameData = result.name[language] || result.name['en'];
             return {
