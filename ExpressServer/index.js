@@ -23,3 +23,5 @@ process.on('SIGINT', () => {
     console.log('Server shutting down...');
     process.exit();
 });
+
+// TODO: consolidate mongoDb constants pull from env

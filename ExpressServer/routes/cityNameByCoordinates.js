@@ -44,7 +44,7 @@ router.get('/', async (req, res) => {
         const geohashesToCheck = [geohash, ...neighbors];
 
         const database = client.db('city-names-db');
-        const collection = database.collection('cities_database');
+        const collection = database.collection('cities-collection');
         const query = { geohash: { $in: geohashesToCheck.map(hash => new RegExp(`^${hash}`)) } };
         const results = await collection.find(query).toArray();
 

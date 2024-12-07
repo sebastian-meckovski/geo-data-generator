@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
   try {
     const client = await getMongoClient();
     const database = client.db('city-names-db');
-    const collection = database.collection('cities_database');
+    const collection = database.collection('cities-collection');
 
     const query = { 
       'country_code': countryCode 
