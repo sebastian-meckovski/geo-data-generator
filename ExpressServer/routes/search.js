@@ -70,11 +70,8 @@ router.get('/', async (req, res) => {
             }
         ];
 
-        console.log(keywordArray)
-
         // Execute the aggregation pipeline
         const results = await collection.aggregate(pipeline).toArray();
-        console.log
 
         if (results.length === 0) {
             return res.status(404).json({ error: 'No matching records found' });
@@ -85,12 +82,16 @@ router.get('/', async (req, res) => {
             const geonameId = result.geoname_id_city;
             const countryCode = result.country_code;
             const nameData = result.name[language] || result.name['en'];
+            const latitude = result.latitude; 
+            const longitude = result.longitude;
             return {
                 geonameId,
                 countryCode,
                 name: {
                     [language]: nameData
-                }
+                },
+                latitude,
+                longitude 
             };
         });
 
