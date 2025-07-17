@@ -1,0 +1,21 @@
+{
+  "name": "geo-lookup-next-js-api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "mongodb": "^6.10.0",
+    "next": "15.4.1",
+    "ngeohash": "^0.6.3"
+  },
+  "devDependencies": {
+    "@types/ngeohash": "^0.6.8",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "typescript": "^5"
+  }
+}
