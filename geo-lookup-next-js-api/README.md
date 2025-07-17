@@ -38,3 +38,57 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 This directory contains example API routes for the headless API app.
 
 For more details, see [route.js file convention](https://nextjs.org/docs/app/api-reference/file-conventions/route).
+
+### Available Endpoints
+
+#### 1. City Info by Coordinates
+`GET /api/city-info-by-coordinates`
+
+Finds the nearest city to given GPS coordinates.
+
+**Query Parameters:**
+- `latitude` (required): Latitude coordinate
+- `longitude` (required): Longitude coordinate  
+- `language` (optional): Language code for localized names
+
+**Example:**
+```
+GET /api/city-info-by-coordinates?latitude=52.2297&longitude=21.0122&language=en
+```
+
+#### 2. City Info by ASCII Name
+`GET /api/city-info-by-ascii`
+
+Finds city information by country code and optional city/admin area names.
+
+**Query Parameters:**
+- `country_code` (required): ISO country code (e.g., "US", "PL")
+- `city_name` (optional): ASCII city name
+- `admin_area` (optional): Administrative area name
+- `language` (optional): Language code for localized names
+
+**Example:**
+```
+GET /api/city-info-by-ascii?country_code=PL&city_name=warsaw&language=en
+```
+
+#### 3. Search Cities
+`GET /api/search`
+
+Search for cities using keywords with MongoDB Atlas Search.
+
+**Query Parameters:**
+- `language` (required): Language code for search and results
+- `keywords` (required): Space-separated search keywords
+
+**Example:**
+```
+GET /api/search?language=en&keywords=new york
+```
+
+### Environment Variables
+
+Create a `.env.local` file with:
+```
+MONGO_DB_CONN_STRING=your_mongodb_connection_string
+```
