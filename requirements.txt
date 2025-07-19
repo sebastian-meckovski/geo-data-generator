@@ -5,3 +5,4 @@ geohash
 python-geohash
 pymongo
 geopandas
+folium
