@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<!--
+  Geo Lookup API Tester - Interactive Map Interface
+  
+  CORS Solution for Local Testing:
+  This page requires cross-origin requests to work properly. If you encounter CORS errors,
+  install the "Allow CORS: Access-Control-Allow-Origin" Chrome extension:
+  https://chromewebstore.google.com/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf
+  
+  Enable the extension when testing this page locally.
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geo API Tester</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""/>
+    
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+    
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+        
+        .leaflet-popup-content {
+            min-width: 200px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Geo Lookup API Tester</h1>
+            <p class="text-lg text-gray-600">Interactive tool for testing geographical data API endpoints</p>
+            <p class="text-sm text-gray-500 mt-2">Search for cities by keywords, find exact matches by ASCII name, or click anywhere on the map to retrieve location information in multiple languages</p>
+        </div>
+        
+        <!-- Search Controls -->
+        <div class="mb-6 bg-white rounded-lg shadow-md p-6">
+            <div class="grid lg:grid-cols-2 gap-6">
+                <!-- Keyword Search -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                        <span class="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                        Search Cities (Keywords)
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex gap-2">
+                            <input 
+                                type="text" 
+                                id="search-input" 
+                                placeholder="Type city name (e.g., bud, paris, london...)"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                            <button 
+                                id="search-button" 
+                                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium whitespace-nowrap"
+                            >
+                                Search
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500">Find cities by partial name matching. Returns multiple results.</p>
+                    </div>
+                </div>
+
+                <!-- ASCII Search -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                        Search by ASCII Name (Exact Match)
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                            <input 
+                                type="text" 
+                                id="city-name-input" 
+                                placeholder="City (e.g., Boston)"
+                                class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            >
+                            <input 
+                                type="text" 
+                                id="country-code-input" 
+                                placeholder="Country (e.g., US)"
+                                maxlength="2"
+                                class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            >
+                            <input 
+                                type="text" 
+                                id="admin-area-input" 
+                                placeholder="Admin Area (optional)"
+                                class="col-span-2 lg:col-span-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            >
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <p class="text-xs text-gray-500">Use exact ASCII names and 2-letter country codes.</p>
+                            <button 
+                                id="ascii-search-button" 
+                                class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 font-medium whitespace-nowrap"
+                            >
+                                Find City
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Language Selector -->
+            <div class="mt-6 pt-4 border-t border-gray-200">
+                <div class="flex items-center justify-between">
+                    <label for="language-select" class="text-sm font-medium text-gray-700">
+                        Display Language:
+                    </label>
+                    <select id="language-select" class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-32">
+                        <option value="en">English</option>
+                        <option value="fr">Français</option>
+                        <option value="pl">Polski</option>
+                        <option value="lt">Lietuvių</option>
+                        <option value="ru">Русский</option>
+                        <option value="hu">Magyar</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Results -->
+        <div id="search-results" class="hidden mb-6 bg-white rounded-lg shadow-md p-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                Search Results
+            </h3>
+            <div id="search-results-list" class="space-y-2 max-h-48 overflow-y-auto">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+        
+        <!-- Loading indicator -->
+        <div id="loading" class="hidden mb-4">
+            <div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded flex items-center">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading location data...
+            </div>
+        </div>
+        
+        <!-- Error message -->
+        <div id="error" class="hidden mb-4">
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <span id="error-message"></span>
+            </div>
+        </div>
+        
+        <!-- No data message -->
+        <div id="no-data" class="hidden mb-4">
+            <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+                <span id="no-data-message">No cities found within the specified radius</span>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="main-content mb-8">
+            <!-- Map Container -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div id="map"></div>
+            </div>
+            
+            <!-- Info Panel -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Location Information
+                </h2>
+                <div id="info-content" class="text-gray-600">
+                    <div class="text-center py-8">
+                        <svg class="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <p class="text-gray-500 mb-2">No location selected</p>
+                        <p class="text-sm text-gray-400">Search for cities or click anywhere on the map to get detailed location information</p>
+                    </div>
+                    <div class="border-t border-gray-200 pt-4 mt-4">
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="font-medium">API Endpoint:</span>
+                                <span class="text-xs break-all text-gray-500">city-info-by-coordinates</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="font-medium">Status:</span>
+                                <span id="api-status" class="text-gray-500">Ready</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200">
+        <div class="container mx-auto px-4 py-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                How to Use
+            </h3>
+            <div class="grid md:grid-cols-2 gap-6 text-sm text-gray-600">
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <span class="w-2 h-2 bg-blue-500 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                        <span>Search for cities by typing keywords and clicking <strong>Search</strong></span>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                        <span>Find specific cities using exact ASCII names with <strong>Find City</strong></span>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="w-2 h-2 bg-gray-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                        <span>Click anywhere on the map to get location information</span>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="w-2 h-2 bg-gray-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                        <span>Select your preferred language from the dropdown</span>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <span class="w-2 h-2 bg-blue-500 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                        <span>Click on search results to navigate to that location</span>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                        <span>Use admin area when multiple cities have the same name</span>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="w-2 h-2 bg-gray-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                        <span>The info panel shows city, administrative region, and country</span>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="w-2 h-2 bg-gray-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                        <span>Use mouse wheel or zoom controls to navigate the map</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 pt-6 border-t border-gray-100 text-center text-xs text-gray-500">
+                <p>Geo Lookup API Tester - Testing geographical data retrieval endpoints</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="geo-api-tester.js"></script>
+</body>
+</html>
